@@ -11,6 +11,9 @@ GtkWidget *launcher_window = NULL;
 GtkWidget *app_stack = NULL;
 GtkWidget *search_entry = NULL;
 GtkWidget *search_results_view = NULL;
+GtkWidget *prev_button = NULL;
+GtkWidget *next_button = NULL;
+int total_pages = 0;
 
 /* Function prototypes */
 void on_launcher_clicked(GtkWidget *widget, gpointer data);
@@ -20,6 +23,58 @@ gboolean on_launcher_window_button_press(GtkWidget *window, GdkEventButton *even
 gboolean on_launcher_delete_event(GtkWidget *widget, GdkEvent *event, gpointer data);
 gboolean on_launcher_key_press(GtkWidget *window, GdkEventKey *event, gpointer data);
 void on_search_activate(GtkEntry *entry, gpointer data);
+void update_navigation_buttons(void);
+
+/* Helper to update button visibility */
+void update_navigation_buttons(void) {
+    if (!app_stack || !prev_button || !next_button) return;
+    
+    GtkWidget *visible_child = gtk_stack_get_visible_child(GTK_STACK(app_stack));
+    if (!visible_child) return;
+    
+    const gchar *name = gtk_widget_get_name(visible_child);
+    
+    /* Hide buttons if showing search results */
+    if (g_strcmp0(name, "search_results_scroll") == 0) {
+        gtk_widget_hide(prev_button);
+        gtk_widget_hide(next_button);
+        return;
+    }
+    
+    /* Parse page number */
+    /* Page names are "page0", "page1", etc. (set in populate_applications_grid) */
+    /* Wait, in populate_applications_grid I used gtk_stack_add_named(..., page_name) */
+    /* But gtk_widget_get_name might return the type name if not explicitly set? */
+    /* Actually gtk_stack_add_named sets the child property 'name', not the widget name. */
+    /* To get the name used in stack, we need gtk_stack_get_visible_child_name */
+    
+    const gchar *child_name = gtk_stack_get_visible_child_name(GTK_STACK(app_stack));
+    if (child_name && g_str_has_prefix(child_name, "page")) {
+        int page_num = atoi(child_name + 4);
+        
+        if (page_num > 0) {
+            gtk_widget_show(prev_button);
+        } else {
+            gtk_widget_hide(prev_button);
+        }
+        
+        if (page_num < total_pages - 1) {
+            gtk_widget_show(next_button);
+        } else {
+            gtk_widget_hide(next_button);
+        }
+    } else {
+        /* Fallback or unknown state */
+        gtk_widget_hide(prev_button);
+        gtk_widget_hide(next_button);
+    }
+}
+
+/* Stack visible child changed callback */
+void on_stack_visible_child_notify(GObject *gobject, GParamSpec *pspec, gpointer user_data) {
+    (void)gobject; (void)pspec; (void)user_data;
+    update_navigation_buttons();
+}
 
 /* Search Entry Activate Handler (Enter Key) */
 void on_search_activate(GtkEntry *entry, gpointer data) {
@@ -89,6 +144,8 @@ void on_launcher_app_clicked(GtkWidget *widget, gpointer data) {
                 app_stack = NULL;
                 search_entry = NULL;
                 search_results_view = NULL;
+                prev_button = NULL;
+                next_button = NULL;
             }
         }
     }
@@ -132,6 +189,8 @@ void on_launcher_clicked(GtkWidget *widget, gpointer data) {
         app_stack = NULL;
         search_entry = NULL;
         search_results_view = NULL;
+        prev_button = NULL;
+        next_button = NULL;
         return;
     }
     
@@ -170,6 +229,7 @@ void on_launcher_clicked(GtkWidget *widget, gpointer data) {
     app_stack = gtk_stack_new();
     gtk_stack_set_transition_type(GTK_STACK(app_stack), GTK_STACK_TRANSITION_TYPE_SLIDE_LEFT_RIGHT);
     gtk_stack_set_transition_duration(GTK_STACK(app_stack), 300);
+    g_signal_connect(app_stack, "notify::visible-child", G_CALLBACK(on_stack_visible_child_notify), NULL);
     
     GtkWidget *results_scroll = gtk_scrolled_window_new(NULL, NULL);
     gtk_widget_set_name(results_scroll, "search_results_scroll");
@@ -183,7 +243,7 @@ void on_launcher_clicked(GtkWidget *widget, gpointer data) {
     
     populate_applications_grid(app_stack);
     
-    GtkWidget *prev_button = gtk_button_new_from_icon_name("go-previous-symbolic", GTK_ICON_SIZE_DIALOG);
+    prev_button = gtk_button_new_from_icon_name("go-previous-symbolic", GTK_ICON_SIZE_DIALOG);
     gtk_widget_set_name(prev_button, "nav-button");
     gtk_widget_set_valign(prev_button, GTK_ALIGN_CENTER);
     g_signal_connect(prev_button, "clicked", G_CALLBACK(on_prev_page_clicked), app_stack);
@@ -191,7 +251,7 @@ void on_launcher_clicked(GtkWidget *widget, gpointer data) {
     
     gtk_box_pack_start(GTK_BOX(main_box), app_stack, TRUE, TRUE, 0);
     
-    GtkWidget *next_button = gtk_button_new_from_icon_name("go-next-symbolic", GTK_ICON_SIZE_DIALOG);
+    next_button = gtk_button_new_from_icon_name("go-next-symbolic", GTK_ICON_SIZE_DIALOG);
     gtk_widget_set_name(next_button, "nav-button");
     gtk_widget_set_valign(next_button, GTK_ALIGN_CENTER);
     g_signal_connect(next_button, "clicked", G_CALLBACK(on_next_page_clicked), app_stack);
@@ -205,11 +265,17 @@ void on_launcher_clicked(GtkWidget *widget, gpointer data) {
     
     gtk_widget_show_all(launcher_window);
     
+    /* Initial button state */
+    update_navigation_buttons();
+    
     GtkWidget *first_page = gtk_stack_get_child_by_name(GTK_STACK(app_stack), "page0");
     if (first_page) gtk_stack_set_visible_child(GTK_STACK(app_stack), first_page);
     
     gtk_window_present(GTK_WINDOW(launcher_window));
+    
+    /* Force focus on search entry */
     gtk_widget_grab_focus(search_entry);
+    gtk_window_set_focus(GTK_WINDOW(launcher_window), search_entry);
 }
 
 void create_launcher_button(GtkWidget *box) {
@@ -228,6 +294,8 @@ gboolean on_launcher_delete_event(GtkWidget *widget, GdkEvent *event, gpointer d
         app_stack = NULL;
         search_entry = NULL;
         search_results_view = NULL;
+        prev_button = NULL;
+        next_button = NULL;
     }
     return TRUE; /* Stop propagation */
 }
@@ -241,6 +309,8 @@ gboolean on_launcher_key_press(GtkWidget *window, GdkEventKey *event, gpointer d
             app_stack = NULL;
             search_entry = NULL;
             search_results_view = NULL;
+            prev_button = NULL;
+            next_button = NULL;
         }
         return TRUE;
     }
@@ -335,4 +405,6 @@ void populate_applications_grid(GtkWidget *stack) {
         g_key_file_free(keyfile);
     }
     g_list_free_full(apps, g_free);
+    
+    total_pages = page_count;
 }
