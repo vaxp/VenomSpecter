@@ -1,0 +1,150 @@
+/* venom-style panel styling */
+
+.venom-panel {
+    background: rgba(0, 0, 0, 0.541);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.clock-label {
+    font-family: "SF Pro Text", -apple-system, system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #ffffff;
+    padding: 0 8px;
+}
+
+.system-icons image {
+    opacity: 0.85;
+    padding: 0 4px;
+}
+
+.system-icons image:hover {
+    opacity: 1.0;
+}
+
+.control-center-button {
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.control-center-button:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.control-center-button image {
+    opacity: 0.85;
+}
+
+.control-center-button:hover image {
+    opacity: 1.0;
+}
+
+/* Control Center */
+.control-center {
+    background: rgba(255, 255, 255, 0.24);
+
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* Large tiles (WiFi, Bluetooth, AirDrop) */
+.large-tile {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.large-tile:hover {
+    background: rgba(255, 255, 255, 0.7);
+
+}
+
+.large-tile.active {
+    background: linear-gradient(135deg, rgba(0, 122, 255, 0.8) 0%, rgba(0, 100, 220, 0.8) 100%);
+}
+
+.large-tile.active .tile-title,
+.large-tile.active .tile-subtitle {
+    color: white;
+}
+
+.tile-title {
+    font-family: "SF Pro Text", -apple-system, system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.tile-subtitle {
+    font-family: "SF Pro Text", -apple-system, system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    color: #86868b;
+}
+
+/* Small tiles (Do Not Disturb, etc) */
+.small-tile {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.small-tile:hover {
+    background: rgba(255, 255, 255, 0.7);
+
+}
+
+.small-tile-label {
+    font-family: "SF Pro Text", -apple-system, system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+/* Sliders */
+.cc-slider {
+    min-height: 8px;
+}
+
+.cc-slider trough {
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    min-height: 8px;
+}
+
+.cc-slider highlight {
+    background: linear-gradient(90deg, #007aff 0%, #0051d5 100%);
+    border-radius: 4px;
+}
+
+.cc-slider slider {
+    background: white;
+    border: 2px solid rgba(0, 122, 255, 0.3);
+    border-radius: 50%;
+    min-width: 20px;
+    min-height: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.cc-slider slider:hover {
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+
+}
+
+/* Separators */
+separator {
+    background: rgba(0, 0, 0, 0.08);
+    min-height: 1px;
+}
+
+/* Buttons */
+button {
+    transition: all 0.2s ease;
+}
+
+button:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
