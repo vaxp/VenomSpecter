@@ -12,4 +12,7 @@ void execute_web_search(const gchar *term, const gchar *engine, GtkWidget *windo
 /* Main Search Function */
 void perform_search(const gchar *text, GtkWidget *stack, GtkWidget *results_view, GtkWidget *window);
 
+/* AI Chat Function */
+void execute_ai_chat(const gchar *initial_query, GtkWidget *window);
+
 #endif

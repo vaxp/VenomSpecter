@@ -459,6 +459,13 @@ void perform_search(const gchar *text, GtkWidget *stack, GtkWidget *results_view
         return;
     }
 
+    if (g_str_has_prefix(text, "ai:")) {
+        GtkWidget *label = gtk_label_new("Press Enter to ask Admiral AI...");
+        gtk_box_pack_start(GTK_BOX(results_view), label, FALSE, FALSE, 0);
+        gtk_widget_show_all(results_view);
+        return;
+    }
+
     /* Normal App Search */
     GDir *dir;
     const gchar *filename;
@@ -531,4 +538,255 @@ void perform_search(const gchar *text, GtkWidget *stack, GtkWidget *results_view
     g_free(lower_text);
     
     gtk_widget_show_all(results_view);
+}
+
+/* --- AI Chat Implementation --- */
+
+typedef struct {
+    GtkWidget *window;
+    GtkWidget *text_view;
+    GtkWidget *entry;
+    GtkWidget *status_label;
+    GtkWidget *spinner;
+    gchar *full_response;
+    gint current_index;
+    guint typewriter_timer;
+    GPid pid;
+    gint stdout_fd;
+    guint stdout_watch;
+} AiChatData;
+
+static void ai_chat_cleanup(AiChatData *data) {
+    if (data->typewriter_timer > 0) {
+        g_source_remove(data->typewriter_timer);
+        data->typewriter_timer = 0;
+    }
+    if (data->stdout_watch > 0) {
+        g_source_remove(data->stdout_watch);
+        data->stdout_watch = 0;
+    }
+    if (data->full_response) {
+        g_free(data->full_response);
+        data->full_response = NULL;
+    }
+    g_free(data);
+}
+
+static gboolean typewriter_step(gpointer user_data) {
+    AiChatData *data = (AiChatData *)user_data;
+    
+    if (!data->full_response || data->full_response[data->current_index] == '\0') {
+        data->typewriter_timer = 0;
+        gtk_label_set_text(GTK_LABEL(data->status_label), "Done.");
+        return FALSE; /* Stop timer */
+    }
+    
+    GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(data->text_view));
+    GtkTextIter end;
+    gtk_text_buffer_get_end_iter(buffer, &end);
+    
+    /* Append one character (handle UTF-8 properly) */
+    gchar *p = data->full_response + data->current_index;
+    gchar *next = g_utf8_next_char(p);
+    gint len = next - p;
+    
+    gtk_text_buffer_insert(buffer, &end, p, len);
+    data->current_index += len;
+    
+    /* Scroll to bottom */
+    GtkTextMark *mark = gtk_text_buffer_create_mark(buffer, NULL, &end, FALSE);
+    gtk_text_view_scroll_to_mark(GTK_TEXT_VIEW(data->text_view), mark, 0.0, TRUE, 0.0, 1.0);
+    gtk_text_buffer_delete_mark(buffer, mark);
+    
+    return TRUE;
+}
+
+static void start_typewriter(AiChatData *data) {
+    if (data->typewriter_timer > 0) {
+        g_source_remove(data->typewriter_timer);
+    }
+    data->current_index = 0;
+    gtk_label_set_text(GTK_LABEL(data->status_label), "Typing...");
+    data->typewriter_timer = g_timeout_add(10, typewriter_step, data);
+}
+
+static gboolean on_ai_stdout(GIOChannel *source, GIOCondition condition, gpointer user_data) {
+    AiChatData *data = (AiChatData *)user_data;
+    GIOStatus status;
+    gchar *str;
+    gsize len;
+    
+    if (condition & G_IO_IN) {
+        status = g_io_channel_read_to_end(source, &str, &len, NULL);
+        if (status == G_IO_STATUS_NORMAL) {
+            if (data->full_response) {
+                gchar *tmp = g_strconcat(data->full_response, str, NULL);
+                g_free(data->full_response);
+                data->full_response = tmp;
+            } else {
+                data->full_response = g_strdup(str);
+            }
+            g_free(str);
+        }
+    }
+    
+    if (condition & (G_IO_HUP | G_IO_ERR)) {
+        gtk_spinner_stop(GTK_SPINNER(data->spinner));
+        if (data->full_response) {
+            start_typewriter(data);
+        } else {
+            gtk_label_set_text(GTK_LABEL(data->status_label), "No response.");
+        }
+        data->stdout_watch = 0;
+        return FALSE; /* Remove source */
+    }
+    
+    return TRUE;
+}
+
+static void fetch_ai_response(AiChatData *data, const gchar *query) {
+    if (!query || strlen(query) == 0) return;
+    
+    /* Reset state */
+    if (data->full_response) {
+        g_free(data->full_response);
+        data->full_response = NULL;
+    }
+    if (data->typewriter_timer > 0) {
+        g_source_remove(data->typewriter_timer);
+        data->typewriter_timer = 0;
+    }
+    gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(data->text_view)), "", -1);
+    gtk_label_set_text(GTK_LABEL(data->status_label), "Admiral is analyzing...");
+    gtk_spinner_start(GTK_SPINNER(data->spinner));
+    
+    /* Prepare curl command */
+    gchar *encoded_query = g_uri_escape_string(query, NULL, TRUE);
+    gchar *url = g_strdup_printf("https://text.pollinations.ai/%s", encoded_query);
+    g_free(encoded_query);
+    
+    gchar *argv[] = {"curl", "-s", url, NULL};
+    GError *error = NULL;
+    gint stdout_pipe;
+    
+    if (g_spawn_async_with_pipes(NULL, argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_SEARCH_PATH, NULL, NULL, &data->pid, NULL, &stdout_pipe, NULL, &error)) {
+        GIOChannel *ch = g_io_channel_unix_new(stdout_pipe);
+        data->stdout_watch = g_io_add_watch(ch, G_IO_IN | G_IO_HUP | G_IO_ERR, on_ai_stdout, data);
+        g_io_channel_unref(ch);
+    } else {
+        gtk_label_set_text(GTK_LABEL(data->status_label), "Failed to connect.");
+        gtk_spinner_stop(GTK_SPINNER(data->spinner));
+        g_warning("AI Spawn Error: %s", error->message);
+        g_error_free(error);
+    }
+    
+    g_free(url);
+}
+
+static void on_ai_entry_activate(GtkEntry *entry, gpointer user_data) {
+    AiChatData *data = (AiChatData *)user_data;
+    const gchar *text = gtk_entry_get_text(entry);
+    
+    if (g_str_has_prefix(text, "ai:")) {
+        fetch_ai_response(data, text + 3);
+    } else {
+        fetch_ai_response(data, text);
+    }
+}
+
+static gboolean on_ai_window_delete(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+    (void)widget; (void)event;
+    AiChatData *data = (AiChatData *)user_data;
+    ai_chat_cleanup(data);
+    return FALSE; /* Propagate destroy */
+}
+
+void execute_ai_chat(const gchar *initial_query, GtkWidget *parent) {
+    AiChatData *data = g_new0(AiChatData, 1);
+    
+    /* Window Setup */
+    data->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(data->window), "Admiral AI");
+    gtk_window_set_default_size(GTK_WINDOW(data->window), 800, 550);
+    gtk_window_set_position(GTK_WINDOW(data->window), GTK_WIN_POS_CENTER);
+    gtk_window_set_transient_for(GTK_WINDOW(data->window), GTK_WINDOW(parent));
+    gtk_window_set_modal(GTK_WINDOW(data->window), TRUE);
+    
+    /* Visual Transparency */
+    GdkScreen *screen = gtk_widget_get_screen(data->window);
+    GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
+    if (visual && gdk_screen_is_composited(screen)) {
+        gtk_widget_set_visual(data->window, visual);
+    }
+    
+    /* CSS Styling */
+    GtkCssProvider *provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(provider,
+        "window#ai-window { background-color: rgba(0, 0, 0, 0.85); }"
+        "entry { background-color: rgba(37, 37, 37, 0.6); color: white; border: 1px solid rgba(255,255,255,0.1); }"
+        "textview { background-color: rgba(0, 0, 0, 0.2); color: #E0E0E0; font-family: Monospace; }"
+        "label { color: white; }", -1, NULL);
+    GtkStyleContext *context = gtk_widget_get_style_context(data->window);
+    gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    gtk_widget_set_name(data->window, "ai-window");
+    g_object_unref(provider);
+    
+    /* Layout */
+    GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
+    gtk_container_set_border_width(GTK_CONTAINER(main_box), 20);
+    gtk_container_add(GTK_CONTAINER(data->window), main_box);
+    
+    /* Header */
+    GtkWidget *header_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    GtkWidget *icon = gtk_image_new_from_icon_name("dialog-information", GTK_ICON_SIZE_MENU); /* Placeholder for smart_toy */
+    GtkWidget *title = gtk_label_new("Admiral AI");
+    GtkStyleContext *title_ctx = gtk_widget_get_style_context(title);
+    gtk_style_context_add_class(title_ctx, "h1");
+    
+    GtkWidget *beta_label = gtk_label_new("BETA");
+    GtkStyleContext *beta_ctx = gtk_widget_get_style_context(beta_label);
+    gtk_style_context_add_class(beta_ctx, "badge");
+    
+    gtk_box_pack_start(GTK_BOX(header_box), icon, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(header_box), title, FALSE, FALSE, 0);
+    gtk_box_pack_end(GTK_BOX(header_box), beta_label, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(main_box), header_box, FALSE, FALSE, 0);
+    
+    /* Input */
+    data->entry = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(data->entry), "Type 'ai: ...'");
+    if (initial_query) {
+        gchar *full_text = g_strdup_printf("ai: %s", initial_query);
+        gtk_entry_set_text(GTK_ENTRY(data->entry), full_text);
+        g_free(full_text);
+    }
+    g_signal_connect(data->entry, "activate", G_CALLBACK(on_ai_entry_activate), data);
+    gtk_box_pack_start(GTK_BOX(main_box), data->entry, FALSE, FALSE, 0);
+    
+    /* Response Area */
+    GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL);
+    gtk_widget_set_vexpand(scrolled, TRUE);
+    data->text_view = gtk_text_view_new();
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(data->text_view), FALSE);
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(data->text_view), GTK_WRAP_WORD_CHAR);
+    gtk_text_view_set_left_margin(GTK_TEXT_VIEW(data->text_view), 10);
+    gtk_text_view_set_right_margin(GTK_TEXT_VIEW(data->text_view), 10);
+    gtk_container_add(GTK_CONTAINER(scrolled), data->text_view);
+    gtk_box_pack_start(GTK_BOX(main_box), scrolled, TRUE, TRUE, 0);
+    
+    /* Status Footer */
+    GtkWidget *footer_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    data->spinner = gtk_spinner_new();
+    data->status_label = gtk_label_new("Ready.");
+    gtk_box_pack_start(GTK_BOX(footer_box), data->spinner, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(footer_box), data->status_label, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(main_box), footer_box, FALSE, FALSE, 0);
+    
+    g_signal_connect(data->window, "delete-event", G_CALLBACK(on_ai_window_delete), data);
+    
+    gtk_widget_show_all(data->window);
+    
+    if (initial_query) {
+        fetch_ai_response(data, initial_query);
+    }
 }

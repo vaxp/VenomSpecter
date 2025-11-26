@@ -102,6 +102,10 @@ void on_search_activate(GtkEntry *entry, gpointer data) {
         execute_web_search(text + 2, "google", launcher_window, &app_stack, &search_entry, &search_results_view);
         return;
     }
+    if (g_str_has_prefix(text, "ai:")) {
+        execute_ai_chat(text + 3, launcher_window);
+        return;
+    }
     
     /* If normal search, launch first app result */
     GList *children = gtk_container_get_children(GTK_CONTAINER(search_results_view));
