@@ -299,8 +299,28 @@ void create_launcher_button(GtkWidget *box) {
     }
     g_object_unref(css_provider);
     
-    launcher_button = gtk_button_new_from_icon_name("start-here-symbolic", GTK_ICON_SIZE_BUTTON);
+    /* Create button with logo image */
+    launcher_button = gtk_button_new();
     gtk_widget_set_name(launcher_button, "launcher-button");
+    
+    /* Load and scale logo.png */
+    GError *logo_error = NULL;
+    GdkPixbuf *logo_pixbuf = gdk_pixbuf_new_from_file_at_scale("logo.png", 24, 24, TRUE, &logo_error);
+    
+    if (logo_pixbuf) {
+        GtkWidget *logo_image = gtk_image_new_from_pixbuf(logo_pixbuf);
+        gtk_container_add(GTK_CONTAINER(launcher_button), logo_image);
+        g_object_unref(logo_pixbuf);
+    } else {
+        /* Fallback to icon if logo.png not found */
+        GtkWidget *fallback_image = gtk_image_new_from_icon_name("start-here-symbolic", GTK_ICON_SIZE_BUTTON);
+        gtk_container_add(GTK_CONTAINER(launcher_button), fallback_image);
+        if (logo_error) {
+            g_warning("Failed to load logo.png: %s", logo_error->message);
+            g_error_free(logo_error);
+        }
+    }
+    
     g_signal_connect(launcher_button, "clicked", G_CALLBACK(on_launcher_clicked), NULL);
     gtk_box_pack_start(GTK_BOX(box), launcher_button, FALSE, FALSE, 0);
     gtk_widget_show(launcher_button);
