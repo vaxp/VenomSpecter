@@ -1,0 +1,9 @@
+vater:sudo apt update
+vafile:calculator
+s:vaxp.org
+g:vaxp-os
+y:phonk
+!:64334*66
+ai:hi 
+
+ffmpeg -f x11grab -r 25 -s $(xdpyinfo | grep dimensions | awk '{print $2}') -i :0.0 -vf "scale=1280:-2" -preset ultrafast -crf 25 ~/Videos/rec_full_$(date +%s).mp4
