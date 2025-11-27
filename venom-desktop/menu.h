@@ -8,6 +8,10 @@
 
 #include <gtk/gtk.h>
 
+/* Helper Functions */
+GtkWidget* create_styled_menu(void);
+void apply_menu_style(GtkWidget *menu);
+
 /* Function Declarations */
 
 /* Item Menu Callbacks */

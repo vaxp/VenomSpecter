@@ -14,6 +14,45 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* --- Helper Functions --- */
+
+void apply_menu_style(GtkWidget *menu) {
+    GtkCssProvider *provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(provider,
+        "menu {"
+        "  background-color: rgba(0, 0, 0, 0.562);"
+        "  border: 1px solid rgb(0, 252, 210);"
+        "  border-radius: 8px;"
+        "  padding: 6px;"
+        "}"
+        "menuitem {"
+        "  background-color: transparent;"
+        "  color: white;"
+        "  padding: 8px 20px;"
+        "  border-radius: 4px;"
+        "  margin: 2px 0px;"
+        "}"
+        "menuitem:hover {"
+        "  background-color: rgba(0, 252, 210, 0.2);"
+        "  border: 1px solid rgb(0, 252, 210);"
+        "}"
+        "separator {"
+        "  background-color: rgba(0, 252, 210, 0.3);"
+        "  min-height: 1px;"
+        "  margin: 4px 0px;"
+        "}", -1, NULL);
+    
+    GtkStyleContext *context = gtk_widget_get_style_context(menu);
+    gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+    g_object_unref(provider);
+}
+
+GtkWidget* create_styled_menu(void) {
+    GtkWidget *menu = gtk_menu_new();
+    apply_menu_style(menu);
+    return menu;
+}
+
 /* --- Item Menu Callbacks --- */
 
 void on_item_rename(GtkWidget *menuitem, gpointer data) {
@@ -121,7 +160,7 @@ gboolean on_item_button_press(GtkWidget *widget, GdkEventButton *event, gpointer
             select_item(widget);
         }
 
-        GtkWidget *menu = gtk_menu_new();
+        GtkWidget *menu = create_styled_menu();
         
         if (g_list_length(selected_items) > 1) {
             /* Multi-Selection Menu */

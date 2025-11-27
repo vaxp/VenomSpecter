@@ -89,7 +89,7 @@ gboolean on_bg_button_press(GtkWidget *widget, GdkEventButton *event, gpointer d
         return TRUE;
     }
     if (event->button == 3) {
-        GtkWidget *menu = gtk_menu_new();
+        GtkWidget *menu = create_styled_menu();
         GtkWidget *new_folder = gtk_menu_item_new_with_label("Create Folder");
         GtkWidget *term = gtk_menu_item_new_with_label("Open Terminal Here");
         GtkWidget *paste = gtk_menu_item_new_with_label("Paste");
