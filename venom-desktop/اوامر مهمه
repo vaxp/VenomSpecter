@@ -1,0 +1,7 @@
+//venom-setbg
+gcc -o venom-setbg venom-setbg.c -lX11 -lImlib2
+sudo mv venom-setbg /usr/local/bin/
+venom-setbg /home/x/Pictures/anime.jpg
+
+//venom-desktop-manager
+gcc -o venom-desktop-manager venom-desktop-manager.c $(pkg-config --cflags --libs gtk+-3.0 gio-2.0 gio-unix-2.0) -lm
