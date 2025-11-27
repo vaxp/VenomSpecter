@@ -505,6 +505,8 @@ static void on_web_search_wrapper(const gchar *term, const gchar *engine) {
     gchar *url = NULL;
     if (g_strcmp0(engine, "github") == 0) {
         url = g_strdup_printf("https://github.com/search?q=%s", term);
+    } else if (g_strcmp0(engine, "youtube") == 0) {
+        url = g_strdup_printf("https://www.youtube.com/results?search_query=%s", term);
     } else {
         url = g_strdup_printf("https://www.google.com/search?q=%s", term);
     }
@@ -568,6 +570,11 @@ static void on_search_activate(GtkEntry *entry, gpointer data) {
     }
     if (g_str_has_prefix(text, "s:")) {
         on_web_search_wrapper(text + 2, "google");
+        gtk_entry_set_text(entry, "");
+        return;
+    }
+    if (g_str_has_prefix(text, "y:")) {
+        on_web_search_wrapper(text + 2, "youtube");
         gtk_entry_set_text(entry, "");
         return;
     }
@@ -675,7 +682,7 @@ GtkWidget* create_venom_panel(void) {
     
     /* --- SEARCH BAR --- */
     search_entry = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(search_entry), "Admiral: (vater:, !:, s:, g:)");
+    gtk_entry_set_placeholder_text(GTK_ENTRY(search_entry), "Admiral: (vater:, !:, s:, g:, y:)");
     gtk_widget_set_size_request(search_entry, 350, 24);
     gtk_widget_set_valign(search_entry, GTK_ALIGN_CENTER);
     
