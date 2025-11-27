@@ -37,7 +37,42 @@ GHashTable *window_groups; /* wm_class -> WindowGroup */
 GList *pinned_apps = NULL; /* List of pinned wm_class strings */
 
 
+/* Dock Realize Callback - Set WM_STRUT for space reservation */
+static void on_dock_realize(GtkWidget *widget, gpointer data) {
+    (void)data;
+    GdkWindow *gdk_window = gtk_widget_get_window(widget);
+    GdkDisplay *display = gdk_window_get_display(gdk_window);
+    GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
+    GdkRectangle geometry;
+    gdk_monitor_get_geometry(monitor, &geometry);
+    
+    /* Set window as dock type */
+    gdk_window_set_type_hint(gdk_window, GDK_WINDOW_TYPE_HINT_DOCK);
+    
+    /* Reserve 60px at bottom */
+    gulong strut[12] = {0};
+    strut[3] = 60;  /* bottom */
+    strut[10] = 0;  /* bottom_start_x */
+    strut[11] = geometry.width;  /* bottom_end_x */
+    
+    gdk_property_change(gdk_window, 
+                       gdk_atom_intern("_NET_WM_STRUT_PARTIAL", FALSE),
+                       gdk_atom_intern("CARDINAL", FALSE),
+                       32, GDK_PROP_MODE_REPLACE,
+                       (guchar *)strut, 12);
+    
+    /* Also set _NET_WM_STRUT for older window managers */
+    gulong simple_strut[4] = {0, 0, 0, 60};  /* left, right, top, bottom */
+    gdk_property_change(gdk_window,
+                       gdk_atom_intern("_NET_WM_STRUT", FALSE),
+                       gdk_atom_intern("CARDINAL", FALSE),
+                       32, GDK_PROP_MODE_REPLACE,
+                       (guchar *)simple_strut, 4);
+}
+
+
 /* Function prototypes */
+static void on_dock_realize(GtkWidget *widget, gpointer data);
 void update_window_list();
 GdkPixbuf *get_window_icon(Window xwindow);
 char *get_window_name(Window xwindow);
@@ -89,13 +124,25 @@ int main(int argc, char *argv[]) {
 
     /* UI Setup */
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "Simple Panel");
-    gtk_window_set_default_size(GTK_WINDOW(window), 800, 44);
+    gtk_window_set_title(GTK_WINDOW(window), "vaxp-dock");
+    
+    /* Get screen dimensions for full-width sizing */
+    GdkScreen *gdk_screen = gdk_display_get_default_screen(display);
+    gint screen_width = gdk_screen_get_width(gdk_screen);
+    gint screen_height = gdk_screen_get_height(gdk_screen);
+    
+    /* Set as DOCK - explicitly declare as dock window */
     gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_DOCK);
-    gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
+    gtk_window_set_default_size(GTK_WINDOW(window), screen_width, 60);
     gtk_window_set_gravity(GTK_WINDOW(window), GDK_GRAVITY_SOUTH);
     gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
     gtk_widget_set_app_paintable(window, TRUE);
+    
+    /* Window properties for dock behavior */
+    gtk_window_set_keep_above(GTK_WINDOW(window), TRUE);
+    gtk_window_stick(GTK_WINDOW(window));
+    gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), TRUE);
+    gtk_window_set_skip_pager_hint(GTK_WINDOW(window), TRUE);
 
     /* Enable transparency */
     GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
@@ -109,6 +156,7 @@ int main(int argc, char *argv[]) {
     gtk_widget_set_valign(box, GTK_ALIGN_CENTER);
     gtk_container_add(GTK_CONTAINER(window), box);
 
+    g_signal_connect(window, "realize", G_CALLBACK(on_dock_realize), NULL);
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
     /* Initialize window groups hash table */
@@ -130,16 +178,8 @@ int main(int argc, char *argv[]) {
 
     gtk_widget_show_all(window);
     
-    /* Position at bottom center after window is realized */
-    GdkScreen *gdk_screen = gtk_window_get_screen(GTK_WINDOW(window));
-    gint screen_width = gdk_screen_get_width(gdk_screen);
-    gint screen_height = gdk_screen_get_height(gdk_screen);
-    gint window_width, window_height;
-    gtk_window_get_size(GTK_WINDOW(window), &window_width, &window_height);
-    
-    gtk_window_move(GTK_WINDOW(window), 
-                    (screen_width - window_width) / 2,
-                    screen_height - window_height - 10);
+    /* Position at bottom center - full width */
+    gtk_window_move(GTK_WINDOW(window), 0, screen_height - 60);
     
     gtk_main();
 
