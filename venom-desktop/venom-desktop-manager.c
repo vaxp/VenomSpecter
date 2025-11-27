@@ -419,6 +419,12 @@ static void on_bg_drag_data_received(GtkWidget *widget, GdkDragContext *context,
                 int new_x = start_pos[0] + delta_x;
                 int new_y = start_pos[1] + delta_y;
                 
+                /* Clamp to screen boundaries */
+                if (new_x < 0) new_x = 0;
+                if (new_y < 0) new_y = 0;
+                if (new_x > screen_w - ITEM_WIDTH) new_x = screen_w - ITEM_WIDTH;
+                if (new_y > screen_h - ITEM_HEIGHT) new_y = screen_h - ITEM_HEIGHT;
+                
                 gtk_layout_move(GTK_LAYOUT(icon_layout), item, new_x, new_y);
                 
                 /* Save new position */
