@@ -20,6 +20,20 @@ static gchar *show_password_dialog(GtkWidget *parent) {
                                          "_OK", GTK_RESPONSE_ACCEPT,
                                          NULL);
     
+    /* Remove window decoration */
+    gtk_window_set_decorated(GTK_WINDOW(dialog), FALSE);
+    
+    /* Apply CSS styling */
+    GtkCssProvider *css_provider = gtk_css_provider_new();
+    const gchar *css_data = 
+        "dialog { background: rgba(0, 0, 0, 0.541); }"
+        "dialog label { color: white; }"
+        "dialog button { color: white; }";
+    gtk_css_provider_load_from_data(css_provider, css_data, -1, NULL);
+    GtkStyleContext *style_ctx = gtk_widget_get_style_context(dialog);
+    gtk_style_context_add_provider(style_ctx, GTK_STYLE_PROVIDER(css_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(css_provider);
+    
     gtk_container_set_border_width(GTK_CONTAINER(dialog), 20);
     content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
     gtk_box_set_spacing(GTK_BOX(content_area), 5);
@@ -58,6 +72,21 @@ static void show_math_result_dialog(GtkWidget *parent, const gchar *expression, 
                                                GTK_BUTTONS_CLOSE,
                                                "%s\n= %s", expression, result);
     gtk_window_set_title(GTK_WINDOW(dialog), "Calculation Result");
+    
+    /* Remove window decoration */
+    gtk_window_set_decorated(GTK_WINDOW(dialog), FALSE);
+    
+    /* Apply CSS styling */
+    GtkCssProvider *css_provider = gtk_css_provider_new();
+    const gchar *css_data = 
+        "dialog { background: rgba(0, 0, 0, 0.541); }"
+        "dialog label { color: white; }"
+        "dialog button { color: white; }";
+    gtk_css_provider_load_from_data(css_provider, css_data, -1, NULL);
+    GtkStyleContext *style_ctx = gtk_widget_get_style_context(dialog);
+    gtk_style_context_add_provider(style_ctx, GTK_STYLE_PROVIDER(css_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(css_provider);
+    
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
 }
@@ -65,7 +94,7 @@ static void show_math_result_dialog(GtkWidget *parent, const gchar *expression, 
 /* File Results Dialog */
 static void on_file_result_activated(GtkListBox *box, GtkListBoxRow *row, gpointer data) {
     (void)box;
-    GtkWidget *window = GTK_WIDGET(data);
+    GtkWidget *dialog = GTK_WIDGET(data);  /* This is the dialog itself, not the parent */
     GtkWidget *child = gtk_bin_get_child(GTK_BIN(row));
     const gchar *path = g_object_get_data(G_OBJECT(child), "file-path");
     
@@ -88,6 +117,9 @@ static void on_file_result_activated(GtkListBox *box, GtkListBoxRow *row, gpoint
             g_free(uri);
         }
         g_free(directory);
+        
+        /* Close only the dialog window, not the parent */
+        gtk_widget_destroy(dialog);
     }
 }
 
@@ -98,9 +130,24 @@ static void show_file_results_dialog(GtkWidget *parent, const gchar *term, GList
                                                     GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
                                                     "_Close", GTK_RESPONSE_CLOSE,
                                                     NULL);
+    
+    /* Remove window decoration (title bar) */
+    gtk_window_set_decorated(GTK_WINDOW(dialog), FALSE);
+    
     /* زيادة حجم النافذة لعرض النتائج بشكل أفضل */
     gtk_window_set_default_size(GTK_WINDOW(dialog), 800, 600);
     gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER);
+    
+    /* Apply CSS styling */
+    GtkCssProvider *css_provider = gtk_css_provider_new();
+    const gchar *css_data = 
+        "dialog { background: rgba(0, 0, 0, 0.541); }"
+        "dialog > .titlebar { background: rgba(0, 0, 0, 0.541); border: none; }"
+        "dialog label, dialog button { color: white; }";
+    gtk_css_provider_load_from_data(css_provider, css_data, -1, NULL);
+    GtkStyleContext *style_ctx = gtk_widget_get_style_context(dialog);
+    gtk_style_context_add_provider(style_ctx, GTK_STYLE_PROVIDER(css_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(css_provider);
     
     GtkWidget *content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
     gtk_container_set_border_width(GTK_CONTAINER(content_area), 10);
@@ -118,7 +165,8 @@ static void show_file_results_dialog(GtkWidget *parent, const gchar *term, GList
         GtkWidget *listbox = gtk_list_box_new();
         gtk_list_box_set_selection_mode(GTK_LIST_BOX(listbox), GTK_SELECTION_SINGLE);
         gtk_container_add(GTK_CONTAINER(scrolled), listbox);
-        g_signal_connect(listbox, "row-activated", G_CALLBACK(on_file_result_activated), parent);
+        /* Pass the dialog itself, not the parent, so we can close only the dialog */
+        g_signal_connect(listbox, "row-activated", G_CALLBACK(on_file_result_activated), dialog);
         
         for (GList *l = files; l != NULL; l = l->next) {
             gchar *path = (gchar *)l->data;
@@ -236,7 +284,7 @@ static void on_console_entry_activate(GtkEntry *entry, gpointer data) {
 }
 
 static void on_console_close(GtkWidget *dialog, gint response, gpointer data) {
-    (void)dialog; (void)response;
+    (void)response;
     ConsoleData *console = (ConsoleData *)data;
     
     if (console->stdout_watch > 0) {
@@ -247,6 +295,9 @@ static void on_console_close(GtkWidget *dialog, gint response, gpointer data) {
         g_source_remove(console->stderr_watch);
         console->stderr_watch = 0;
     }
+    
+    /* Destroy the dialog */
+    gtk_widget_destroy(dialog);
     
     g_free(console);
 }
@@ -277,6 +328,22 @@ static void show_command_console(GtkWidget *parent, const gchar *command, const 
 
     /* Create UI */
     console->dialog = gtk_dialog_new_with_buttons("Command Console", GTK_WINDOW(parent), GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT, "_Close", GTK_RESPONSE_CLOSE, NULL);
+    
+    /* Remove window decoration */
+    gtk_window_set_decorated(GTK_WINDOW(console->dialog), FALSE);
+    
+    /* Apply CSS styling */
+    GtkCssProvider *css_provider = gtk_css_provider_new();
+    const gchar *css_data = 
+        "dialog { background: rgba(0, 0, 0, 0.541); }"
+        "dialog label { color: white; }"
+        "dialog button { color: white; }"
+        "dialog textview { background: rgba(0, 0, 0, 0.8); color: #00ff00; }";
+    gtk_css_provider_load_from_data(css_provider, css_data, -1, NULL);
+    GtkStyleContext *style_ctx = gtk_widget_get_style_context(console->dialog);
+    gtk_style_context_add_provider(style_ctx, GTK_STYLE_PROVIDER(css_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(css_provider);
+    
     gtk_window_set_default_size(GTK_WINDOW(console->dialog), 700, 500);
     
     GtkWidget *content = gtk_dialog_get_content_area(GTK_DIALOG(console->dialog));
@@ -319,8 +386,7 @@ static void show_command_console(GtkWidget *parent, const gchar *command, const 
     }
     
     g_signal_connect(console->dialog, "response", G_CALLBACK(on_console_close), console);
-    gtk_dialog_run(GTK_DIALOG(console->dialog));
-    gtk_widget_destroy(console->dialog);
+    gtk_widget_show_all(console->dialog);
 }
 
 /* --- Execution Handlers --- */

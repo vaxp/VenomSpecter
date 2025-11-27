@@ -147,6 +147,30 @@ entry {
     min-height: 24px;
 }
 
+/* Dialog Windows Styling */
+dialog {
+    background: rgba(0, 0, 0, 0.541);
+}
+
+GtkDialog {
+    background: rgba(0, 0, 0, 0.541);
+}
+
+dialog.background {
+    background: rgba(0, 0, 0, 0.541);
+}
+
+/* Remove dialog decorations */
+dialog > decoration {
+    border: none;
+}
+
+/* Dialog content area */
+dialog > .titlebar {
+    background: rgba(0, 0, 0, 0.541);
+    border: none;
+}
+
 /* Buttons */
 button {
     transition: all 0.2s ease;
