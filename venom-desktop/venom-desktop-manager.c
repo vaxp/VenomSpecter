@@ -1,6 +1,6 @@
 /*
  * venom-desktop-manager.c
- * Pro Desktop: Free Positioning, System Clipboard, Transparent Background.
+ * Pro Desktop: Free Positioning, System Clipboard, Transparent Background, Multi-Selection, Drag-and-Drop (System).
  *
  * Compile:
  * gcc -o venom-desktop-manager venom-desktop-manager.c $(pkg-config --cflags --libs gtk+-3.0 gio-2.0 gdesktop-app-info-1.0) -lm
@@ -25,19 +25,22 @@
 #define CONFIG_FILE "/home/x/.config/venom/desktop-items.ini"
 
 /* --- Global Variables --- */
-static double start_x = 0, start_y = 0;
-static double current_x = 0, current_y = 0;
-static gboolean is_selecting = FALSE;
-static GtkWidget *selection_layer = NULL;
+static GtkWidget *main_window = NULL;
 static GtkWidget *icon_layout = NULL;
 static int screen_w = 0;
 static int screen_h = 0;
 
-/* Dragging State */
-static GtkWidget *dragged_item = NULL;
-static double drag_start_x = 0, drag_start_y = 0;
-static int item_start_x = 0, item_start_y = 0;
-static gboolean is_dragging_icon = FALSE;
+/* Selection State */
+static double start_x = 0, start_y = 0;
+static double current_x = 0, current_y = 0;
+static gboolean is_selecting = FALSE;
+static GList *selected_items = NULL;
+
+/* Drag State (System DnD) */
+static double drag_start_x_root = 0;
+static double drag_start_y_root = 0;
+/* Map widget -> Point(start_x, start_y) for all selected items */
+static GHashTable *drag_initial_positions = NULL; 
 
 /* --- Helper Functions --- */
 
@@ -76,6 +79,46 @@ static gboolean get_item_position(const char *filename, int *x, int *y) {
     g_key_file_free(key_file);
     return TRUE;
 }
+
+/* --- Selection Logic --- */
+
+static gboolean is_selected(GtkWidget *item) {
+    return g_list_find(selected_items, item) != NULL;
+}
+
+static void select_item(GtkWidget *item) {
+    if (!is_selected(item)) {
+        selected_items = g_list_append(selected_items, item);
+        GtkStyleContext *context = gtk_widget_get_style_context(item);
+        gtk_style_context_add_class(context, "selected");
+        gtk_widget_queue_draw(item);
+    }
+}
+
+static void deselect_item(GtkWidget *item) {
+    GList *l = g_list_find(selected_items, item);
+    if (l) {
+        selected_items = g_list_delete_link(selected_items, l);
+        GtkStyleContext *context = gtk_widget_get_style_context(item);
+        gtk_style_context_remove_class(context, "selected");
+        gtk_widget_queue_draw(item);
+    }
+}
+
+static void deselect_all() {
+    for (GList *l = selected_items; l != NULL; l = l->next) {
+        GtkWidget *item = GTK_WIDGET(l->data);
+        if (GTK_IS_WIDGET(item)) {
+            GtkStyleContext *context = gtk_widget_get_style_context(item);
+            gtk_style_context_remove_class(context, "selected");
+            gtk_widget_queue_draw(item);
+        }
+    }
+    g_list_free(selected_items);
+    selected_items = NULL;
+}
+
+/* --- File Operations --- */
 
 static void open_file_uri(const char *uri) {
     GError *err = NULL;
@@ -119,14 +162,11 @@ static void delete_file(const char *uri) {
 /* --- System Clipboard --- */
 
 static void clipboard_get_func(GtkClipboard *clipboard, GtkSelectionData *selection_data, guint info, gpointer user_data_or_owner) {
-    char *uri = (char *)user_data_or_owner;
+    char *uri_list = (char *)user_data_or_owner;
     if (info == 1) { /* text/uri-list */
-        gtk_selection_data_set(selection_data, gtk_selection_data_get_target(selection_data), 8, (guchar *)uri, strlen(uri));
+        gtk_selection_data_set(selection_data, gtk_selection_data_get_target(selection_data), 8, (guchar *)uri_list, strlen(uri_list));
     } else if (info == 2) { /* x-special/gnome-copied-files */
-        /* Format: action\nuri (action: copy or cut) */
-        /* We'll default to copy for now as we don't track cut state globally in this simple implementation for the callback */
-        /* To support cut properly, we'd need to pass a struct with action and uri */
-        char *data = g_strdup_printf("copy\n%s", uri);
+        char *data = g_strdup_printf("copy\n%s", uri_list);
         gtk_selection_data_set(selection_data, gtk_selection_data_get_target(selection_data), 8, (guchar *)data, strlen(data));
         g_free(data);
     }
@@ -136,16 +176,31 @@ static void clipboard_clear_func(GtkClipboard *clipboard, gpointer user_data_or_
     g_free(user_data_or_owner);
 }
 
-static void copy_file_to_clipboard(const char *uri, gboolean is_cut) {
+static void copy_selection_to_clipboard(gboolean is_cut) {
+    if (!selected_items) return;
+
+    GString *uri_list = g_string_new("");
+    for (GList *l = selected_items; l != NULL; l = l->next) {
+        GtkWidget *item = GTK_WIDGET(l->data);
+        char *uri = (char *)g_object_get_data(G_OBJECT(item), "uri");
+        if (uri) {
+            g_string_append_printf(uri_list, "%s\r\n", uri);
+        }
+    }
+
+    if (uri_list->len == 0) {
+        g_string_free(uri_list, TRUE);
+        return;
+    }
+
     GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
     GtkTargetEntry targets[] = {
         { "text/uri-list", 0, 1 },
         { "x-special/gnome-copied-files", 0, 2 }
     };
     
-    /* Note: For full cut support we need to pass the state. For now, we simplify. */
-    char *uri_copy = g_strdup(uri); /* Passed to clear_func */
-    gtk_clipboard_set_with_data(clipboard, targets, 2, clipboard_get_func, clipboard_clear_func, uri_copy);
+    char *final_list = g_string_free(uri_list, FALSE);
+    gtk_clipboard_set_with_data(clipboard, targets, 2, clipboard_get_func, clipboard_clear_func, final_list);
 }
 
 static void on_paste_received(GtkClipboard *clipboard, GtkSelectionData *selection_data, gpointer data) {
@@ -154,21 +209,20 @@ static void on_paste_received(GtkClipboard *clipboard, GtkSelectionData *selecti
     gchar *content = (gchar *)gtk_selection_data_get_data(selection_data);
     gchar **lines = g_strsplit(content, "\n", -1);
     
-    /* Handle x-special/gnome-copied-files (action\nuri) or text/uri-list (uri\nuri...) */
     gboolean is_cut = FALSE;
     int start_idx = 0;
 
-    if (g_strcmp0(lines[0], "cut") == 0) {
+    if (lines[0] && g_strcmp0(lines[0], "cut") == 0) {
         is_cut = TRUE;
         start_idx = 1;
-    } else if (g_strcmp0(lines[0], "copy") == 0) {
+    } else if (lines[0] && g_strcmp0(lines[0], "copy") == 0) {
         start_idx = 1;
     }
 
     for (int i = start_idx; lines[i] != NULL; i++) {
         gchar *uri = g_strstrip(lines[i]);
         if (strlen(uri) == 0) continue;
-        if (g_str_has_prefix(uri, "#")) continue; /* Skip comments */
+        if (g_str_has_prefix(uri, "#")) continue;
 
         GFile *src = g_file_new_for_uri(uri);
         char *basename = g_file_get_basename(src);
@@ -198,12 +252,195 @@ static void on_paste_received(GtkClipboard *clipboard, GtkSelectionData *selecti
 
 static void paste_from_clipboard() {
     GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
-    /* Try gnome format first for cut/copy distinction, then uri-list */
     if (gtk_clipboard_wait_is_target_available(clipboard, gdk_atom_intern("x-special/gnome-copied-files", FALSE))) {
         gtk_clipboard_request_contents(clipboard, gdk_atom_intern("x-special/gnome-copied-files", FALSE), on_paste_received, NULL);
     } else {
         gtk_clipboard_request_contents(clipboard, gdk_atom_intern("text/uri-list", FALSE), on_paste_received, NULL);
     }
+}
+
+/* --- Drag and Drop (Unified) --- */
+
+static void on_drag_begin(GtkWidget *widget, GdkDragContext *context, gpointer data) {
+    /* Find the image child to use as drag icon */
+    GtkWidget *box = gtk_bin_get_child(GTK_BIN(widget));
+    if (box) {
+        GList *children = gtk_container_get_children(GTK_CONTAINER(box));
+        GtkWidget *image = NULL;
+        for (GList *l = children; l != NULL; l = l->next) {
+            if (GTK_IS_IMAGE(l->data)) {
+                image = GTK_WIDGET(l->data);
+                break;
+            }
+        }
+        
+        if (image) {
+            /* Try to get pixbuf from image */
+            switch (gtk_image_get_storage_type(GTK_IMAGE(image))) {
+                case GTK_IMAGE_PIXBUF: {
+                    GdkPixbuf *pixbuf = gtk_image_get_pixbuf(GTK_IMAGE(image));
+                    if (pixbuf) gtk_drag_set_icon_pixbuf(context, pixbuf, 24, 24);
+                    break;
+                }
+                case GTK_IMAGE_GICON: {
+                    /* If it's a GIcon, we might need to render it, but for simplicity fallback to default or try to get pixbuf if possible. 
+                       Actually, gtk_image_get_pixbuf might return NULL if it's GICON. 
+                       Let's just use default if pixbuf is not directly available to avoid complexity. */
+                    gtk_drag_set_icon_default(context);
+                    break;
+                }
+                default:
+                    gtk_drag_set_icon_default(context);
+                    break;
+            }
+        } else {
+            gtk_drag_set_icon_default(context);
+        }
+        if (children) g_list_free(children);
+    } else {
+        gtk_drag_set_icon_default(context);
+    }
+}
+
+static void on_drag_data_get(GtkWidget *widget, GdkDragContext *context, GtkSelectionData *data, guint info, guint time, gpointer user_data) {
+    GString *uri_list = g_string_new("");
+    
+    if (is_selected(widget)) {
+        for (GList *l = selected_items; l != NULL; l = l->next) {
+            GtkWidget *item = GTK_WIDGET(l->data);
+            char *uri = (char *)g_object_get_data(G_OBJECT(item), "uri");
+            if (uri) g_string_append_printf(uri_list, "%s\r\n", uri);
+        }
+    } else {
+        char *uri = (char *)g_object_get_data(G_OBJECT(widget), "uri");
+        if (uri) g_string_append_printf(uri_list, "%s\r\n", uri);
+    }
+
+    gtk_selection_data_set(data, gtk_selection_data_get_target(data), 8, (guchar *)uri_list->str, uri_list->len);
+    g_string_free(uri_list, TRUE);
+}
+
+/* Drop on Folder (Move file into folder) */
+static void on_folder_drag_data_received(GtkWidget *widget, GdkDragContext *context, gint x, gint y, GtkSelectionData *data, guint info, guint time, gpointer user_data) {
+    char *folder_uri = (char *)user_data;
+    GFile *folder = g_file_new_for_uri(folder_uri);
+    char *folder_path = g_file_get_path(folder);
+    
+    if (folder_path) {
+        gchar **uris = g_uri_list_extract_uris((const gchar *)gtk_selection_data_get_data(data));
+        if (uris) {
+            for (int i = 0; uris[i] != NULL; i++) {
+                GFile *src = g_file_new_for_uri(uris[i]);
+                char *basename = g_file_get_basename(src);
+                char *dest_path = g_strdup_printf("%s/%s", folder_path, basename);
+                GFile *dest = g_file_new_for_path(dest_path);
+                
+                GError *err = NULL;
+                g_file_move(src, dest, G_FILE_COPY_NONE, NULL, NULL, NULL, &err);
+                
+                if (err) {
+                    g_warning("DnD Move failed: %s", err->message);
+                    g_error_free(err);
+                }
+                
+                g_free(basename);
+                g_free(dest_path);
+                g_object_unref(src);
+                g_object_unref(dest);
+            }
+            g_strfreev(uris);
+            refresh_icons();
+        }
+        g_free(folder_path);
+    }
+    g_object_unref(folder);
+    gtk_drag_finish(context, TRUE, FALSE, time);
+}
+
+/* Drop on Desktop Background (Move Icon or Import File) */
+static void on_bg_drag_data_received(GtkWidget *widget, GdkDragContext *context, gint x, gint y, GtkSelectionData *data, guint info, guint time, gpointer user_data) {
+    GtkWidget *source_widget = gtk_drag_get_source_widget(context);
+    
+    /* Case 1: Internal Move (Moving icons on desktop) */
+    if (source_widget && GTK_IS_WIDGET(source_widget) && 
+        g_strcmp0(gtk_widget_get_name(source_widget), "desktop-item") == 0) {
+        
+        double dx = x - drag_start_x_root; /* Approximate delta */
+        /* Note: x is relative to icon_layout. drag_start_x_root is root. 
+           Since icon_layout is full screen at 0,0, x should be roughly x_root.
+           However, let's refine:
+           We stored initial positions in drag_initial_positions.
+           New Pos = Initial Pos + (Current Mouse - Start Mouse).
+           
+           Wait, 'x' here is the drop point.
+           So New Pos = Initial Pos + (x - drag_start_x_root).
+           
+           Correction: drag_start_x_root was captured at button press.
+           x is current mouse pos relative to layout (which is screen).
+        */
+       
+        double delta_x = x - drag_start_x_root;
+        double delta_y = y - drag_start_y_root;
+
+        if (drag_initial_positions) {
+            GHashTableIter iter;
+            gpointer key, value;
+            g_hash_table_iter_init(&iter, drag_initial_positions);
+            while (g_hash_table_iter_next(&iter, &key, &value)) {
+                GtkWidget *item = GTK_WIDGET(key);
+                int *start_pos = (int *)value;
+                int new_x = start_pos[0] + delta_x;
+                int new_y = start_pos[1] + delta_y;
+                
+                gtk_layout_move(GTK_LAYOUT(icon_layout), item, new_x, new_y);
+                
+                /* Save new position */
+                char *uri = (char *)g_object_get_data(G_OBJECT(item), "uri");
+                if (uri) {
+                    GFile *f = g_file_new_for_uri(uri);
+                    char *filename = g_file_get_basename(f);
+                    save_item_position(filename, new_x, new_y);
+                    g_free(filename);
+                    g_object_unref(f);
+                }
+            }
+        }
+        gtk_drag_finish(context, TRUE, FALSE, time);
+        return;
+    }
+
+    /* Case 2: External Drop (Importing files) */
+    gchar **uris = g_uri_list_extract_uris((const gchar *)gtk_selection_data_get_data(data));
+    if (uris) {
+        for (int i = 0; uris[i] != NULL; i++) {
+            GFile *src = g_file_new_for_uri(uris[i]);
+            char *basename = g_file_get_basename(src);
+            char *dest_path = g_strdup_printf("%s/Desktop/%s", g_get_home_dir(), basename);
+            GFile *dest = g_file_new_for_path(dest_path);
+            
+            GError *err = NULL;
+            /* Try move first (if same fs), else copy? 
+               Standard behavior: Copy if different device, Move if same?
+               Let's default to Copy for safety, or Move if user intent?
+               Usually DnD defaults to Copy unless Shift is held.
+               Let's do Copy.
+            */
+            g_file_copy(src, dest, G_FILE_COPY_NONE, NULL, NULL, NULL, &err);
+            
+            if (err) {
+                g_warning("Import failed: %s", err->message);
+                g_error_free(err);
+            }
+            
+            g_free(basename);
+            g_free(dest_path);
+            g_object_unref(src);
+            g_object_unref(dest);
+        }
+        g_strfreev(uris);
+        refresh_icons();
+    }
+    gtk_drag_finish(context, TRUE, FALSE, time);
 }
 
 /* --- Context Menus --- */
@@ -213,7 +450,7 @@ static void on_item_rename(GtkWidget *menuitem, gpointer data) {
     GFile *file = g_file_new_for_uri(uri);
     char *name = g_file_get_basename(file);
     
-    GtkWidget *dialog = gtk_dialog_new_with_buttons("Rename", NULL, GTK_DIALOG_MODAL, "_Cancel", GTK_RESPONSE_CANCEL, "_Rename", GTK_RESPONSE_ACCEPT, NULL);
+    GtkWidget *dialog = gtk_dialog_new_with_buttons("Rename", GTK_WINDOW(main_window), GTK_DIALOG_MODAL, "_Cancel", GTK_RESPONSE_CANCEL, "_Rename", GTK_RESPONSE_ACCEPT, NULL);
     GtkWidget *content = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
     GtkWidget *entry = gtk_entry_new();
     gtk_entry_set_text(GTK_ENTRY(entry), name);
@@ -235,17 +472,62 @@ static void on_item_rename(GtkWidget *menuitem, gpointer data) {
     g_object_unref(file);
 }
 
-static void on_item_cut(GtkWidget *menuitem, gpointer data) { copy_file_to_clipboard((char*)data, TRUE); }
-static void on_item_copy(GtkWidget *menuitem, gpointer data) { copy_file_to_clipboard((char*)data, FALSE); }
+static void on_item_cut(GtkWidget *menuitem, gpointer data) { copy_selection_to_clipboard(TRUE); }
+static void on_item_copy(GtkWidget *menuitem, gpointer data) { copy_selection_to_clipboard(FALSE); }
 static void on_item_open(GtkWidget *menuitem, gpointer data) { open_file_uri((char*)data); }
-static void on_item_delete(GtkWidget *menuitem, gpointer data) { delete_file((char*)data); }
+static void on_item_delete(GtkWidget *menuitem, gpointer data) { 
+    for (GList *l = selected_items; l != NULL; l = l->next) {
+        char *uri = (char *)g_object_get_data(G_OBJECT(l->data), "uri");
+        delete_file(uri);
+    }
+}
 
 static gboolean on_item_button_press(GtkWidget *widget, GdkEventButton *event, gpointer data) {
     char *uri = (char *)data;
 
-    if (event->type == GDK_BUTTON_PRESS && event->button == 3) {
-        GtkWidget *menu = gtk_menu_new();
+    /* Left Click */
+    if (event->type == GDK_BUTTON_PRESS && event->button == 1) {
+        if (!is_selected(widget)) {
+            if (!(event->state & GDK_CONTROL_MASK)) {
+                deselect_all();
+            }
+            select_item(widget);
+        }
         
+        /* Capture Start Position for DnD Move Logic */
+        drag_start_x_root = event->x_root;
+        drag_start_y_root = event->y_root;
+        
+        if (drag_initial_positions) {
+            GHashTableIter iter;
+            gpointer key, value;
+            g_hash_table_iter_init(&iter, drag_initial_positions);
+            while (g_hash_table_iter_next(&iter, &key, &value)) g_free(value);
+            g_hash_table_destroy(drag_initial_positions);
+        }
+        drag_initial_positions = g_hash_table_new(g_direct_hash, g_direct_equal);
+        
+        for (GList *l = selected_items; l != NULL; l = l->next) {
+            GtkWidget *item = GTK_WIDGET(l->data);
+            int x, y;
+            gtk_container_child_get(GTK_CONTAINER(icon_layout), item, "x", &x, "y", &y, NULL);
+            int *pos = g_new(int, 2);
+            pos[0] = x;
+            pos[1] = y;
+            g_hash_table_insert(drag_initial_positions, item, pos);
+        }
+        
+        return FALSE; /* Propagate to allow GTK DnD to start */
+    }
+
+    /* Right Click */
+    if (event->type == GDK_BUTTON_PRESS && event->button == 3) {
+        if (!is_selected(widget)) {
+            deselect_all();
+            select_item(widget);
+        }
+
+        GtkWidget *menu = gtk_menu_new();
         GtkWidget *i_open = gtk_menu_item_new_with_label("Open");
         GtkWidget *i_cut = gtk_menu_item_new_with_label("Cut");
         GtkWidget *i_copy = gtk_menu_item_new_with_label("Copy");
@@ -253,10 +535,10 @@ static gboolean on_item_button_press(GtkWidget *widget, GdkEventButton *event, g
         GtkWidget *i_del = gtk_menu_item_new_with_label("Move to Trash");
         
         g_signal_connect(i_open, "activate", G_CALLBACK(on_item_open), uri);
-        g_signal_connect(i_cut, "activate", G_CALLBACK(on_item_cut), uri);
-        g_signal_connect(i_copy, "activate", G_CALLBACK(on_item_copy), uri);
+        g_signal_connect(i_cut, "activate", G_CALLBACK(on_item_cut), NULL);
+        g_signal_connect(i_copy, "activate", G_CALLBACK(on_item_copy), NULL);
         g_signal_connect(i_rename, "activate", G_CALLBACK(on_item_rename), uri);
-        g_signal_connect(i_del, "activate", G_CALLBACK(on_item_delete), uri);
+        g_signal_connect(i_del, "activate", G_CALLBACK(on_item_delete), NULL);
         
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), i_open);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), gtk_separator_menu_item_new());
@@ -271,59 +553,12 @@ static gboolean on_item_button_press(GtkWidget *widget, GdkEventButton *event, g
         return TRUE;
     }
     
+    /* Double Click */
     if (event->type == GDK_2BUTTON_PRESS && event->button == 1) {
         open_file_uri(uri);
         return TRUE;
     }
-    
-    /* Start Dragging */
-    if (event->type == GDK_BUTTON_PRESS && event->button == 1) {
-        is_dragging_icon = TRUE;
-        dragged_item = widget;
-        drag_start_x = event->x_root;
-        drag_start_y = event->y_root;
-        gtk_container_child_get(GTK_CONTAINER(icon_layout), widget, "x", &item_start_x, "y", &item_start_y, NULL);
-        return TRUE; /* Consume event to prevent propagation issues */
-    }
 
-    return FALSE;
-}
-
-static gboolean on_item_motion(GtkWidget *widget, GdkEventMotion *event, gpointer data) {
-    if (is_dragging_icon && dragged_item == widget) {
-        int dx = event->x_root - drag_start_x;
-        int dy = event->y_root - drag_start_y;
-        int new_x = item_start_x + dx;
-        int new_y = item_start_y + dy;
-        
-        gtk_layout_move(GTK_LAYOUT(icon_layout), widget, new_x, new_y);
-        return TRUE;
-    }
-    return FALSE;
-}
-
-static gboolean on_item_button_release(GtkWidget *widget, GdkEventButton *event, gpointer data) {
-    if (is_dragging_icon && event->button == 1) {
-        is_dragging_icon = FALSE;
-        dragged_item = NULL;
-        
-        int x, y;
-        gtk_container_child_get(GTK_CONTAINER(icon_layout), widget, "x", &x, "y", &y, NULL);
-        
-        /* Snap to grid (optional, simple snapping here) */
-        // x = (x / 10) * 10;
-        // y = (y / 10) * 10;
-        // gtk_layout_move(GTK_LAYOUT(icon_layout), widget, x, y);
-        
-        /* Save position */
-        GFile *f = g_file_new_for_uri((char*)data);
-        char *filename = g_file_get_basename(f);
-        save_item_position(filename, x, y);
-        g_free(filename);
-        g_object_unref(f);
-        
-        return TRUE;
-    }
     return FALSE;
 }
 
@@ -332,7 +567,7 @@ static gboolean on_item_button_release(GtkWidget *widget, GdkEventButton *event,
 static void on_bg_paste(GtkWidget *item, gpointer data) { paste_from_clipboard(); }
 
 static void on_create_folder(GtkWidget *item, gpointer data) {
-    GtkWidget *dialog = gtk_dialog_new_with_buttons("Create Folder", GTK_WINDOW(data),
+    GtkWidget *dialog = gtk_dialog_new_with_buttons("Create Folder", GTK_WINDOW(main_window),
                                                     GTK_DIALOG_MODAL,
                                                     "_Cancel", GTK_RESPONSE_CANCEL,
                                                     "_Create", GTK_RESPONSE_ACCEPT,
@@ -370,6 +605,7 @@ static GtkWidget* create_desktop_item(GFileInfo *info, const char *full_path) {
     const char *filename = g_file_info_get_name(info);
     char *display_name = g_strdup(g_file_info_get_display_name(info));
     GIcon *gicon = g_object_ref(g_file_info_get_icon(info));
+    gboolean is_dir = (g_file_info_get_file_type(info) == G_FILE_TYPE_DIRECTORY);
     
     if (g_str_has_suffix(filename, ".desktop")) {
         GDesktopAppInfo *app_info = g_desktop_app_info_new_from_filename(full_path);
@@ -404,15 +640,29 @@ static GtkWidget* create_desktop_item(GFileInfo *info, const char *full_path) {
     GFile *f = g_file_new_for_path(full_path);
     char *uri = g_file_get_uri(f);
     
+    /* Store URI */
+    g_object_set_data_full(G_OBJECT(btn), "uri", g_strdup(uri), g_free);
+    
+    /* Setup Drag Source (System DnD) */
+    GtkTargetEntry targets[] = { { "text/uri-list", 0, 0 } };
+    gtk_drag_source_set(btn, GDK_BUTTON1_MASK, targets, 1, GDK_ACTION_COPY | GDK_ACTION_MOVE);
+    g_signal_connect(btn, "drag-begin", G_CALLBACK(on_drag_begin), NULL);
+    g_signal_connect(btn, "drag-data-get", G_CALLBACK(on_drag_data_get), NULL);
+    
+    /* Setup Drag Dest (if directory) */
+    if (is_dir) {
+        gtk_drag_dest_set(btn, GTK_DEST_DEFAULT_ALL, targets, 1, GDK_ACTION_MOVE | GDK_ACTION_COPY);
+        g_signal_connect(btn, "drag-data-received", G_CALLBACK(on_folder_drag_data_received), g_strdup(uri));
+    }
+
     /* Connect Events */
-    gtk_widget_add_events(btn, GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_POINTER_MOTION_MASK);
-    g_signal_connect_data(btn, "button-press-event", G_CALLBACK(on_item_button_press), uri, NULL, 0);
-    g_signal_connect(btn, "motion-notify-event", G_CALLBACK(on_item_motion), NULL);
-    g_signal_connect_data(btn, "button-release-event", G_CALLBACK(on_item_button_release), uri, (GClosureNotify)g_free, 0);
+    gtk_widget_add_events(btn, GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
+    g_signal_connect_data(btn, "button-press-event", G_CALLBACK(on_item_button_press), g_strdup(uri), (GClosureNotify)g_free, 0);
     
     g_object_unref(f);
     g_free(display_name);
     if (gicon) g_object_unref(gicon);
+    g_free(uri);
 
     gtk_widget_show_all(btn);
     return btn;
@@ -422,10 +672,13 @@ static void refresh_icons() {
     /* Clear existing children */
     GList *children, *iter;
     children = gtk_container_get_children(GTK_CONTAINER(icon_layout));
+    
+    deselect_all();
+    
     for (iter = children; iter != NULL; iter = g_list_next(iter))
         gtk_widget_destroy(GTK_WIDGET(iter->data));
     g_list_free(children);
-
+    
     const char *home = g_get_home_dir();
     char *desktop_path = g_strdup_printf("%s/Desktop", home);
     GFile *dir = g_file_new_for_path(desktop_path);
@@ -469,13 +722,14 @@ static void refresh_icons() {
 
 /* --- Drawing & Events --- */
 
-static gboolean on_selection_draw(GtkWidget *widget, cairo_t *cr, gpointer data) {
-    /* Clear background to make it transparent */
+static gboolean on_layout_draw_bg(GtkWidget *widget, cairo_t *cr, gpointer data) {
     cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
     cairo_paint(cr);
     cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+    return FALSE; 
+}
 
-    /* Draw Selection Box */
+static gboolean on_layout_draw_fg(GtkWidget *widget, cairo_t *cr, gpointer data) {
     if (is_selecting) {
         double x = MIN(start_x, current_x);
         double y = MIN(start_y, current_y);
@@ -496,12 +750,13 @@ static gboolean on_selection_draw(GtkWidget *widget, cairo_t *cr, gpointer data)
 
 static gboolean on_bg_button_press(GtkWidget *widget, GdkEventButton *event, gpointer data) {
     if (event->button == 1) {
+        deselect_all();
         is_selecting = TRUE;
         start_x = event->x;
         start_y = event->y;
         current_x = event->x;
         current_y = event->y;
-        gtk_widget_queue_draw(selection_layer);
+        gtk_widget_queue_draw(icon_layout);
         return TRUE;
     }
     if (event->button == 3) {
@@ -539,7 +794,27 @@ static gboolean on_bg_motion(GtkWidget *widget, GdkEventMotion *event, gpointer 
     if (is_selecting) {
         current_x = event->x;
         current_y = event->y;
-        gtk_widget_queue_draw(selection_layer);
+        gtk_widget_queue_draw(icon_layout);
+        
+        double x = MIN(start_x, current_x);
+        double y = MIN(start_y, current_y);
+        double w = fabs(current_x - start_x);
+        double h = fabs(current_y - start_y);
+        
+        GList *children = gtk_container_get_children(GTK_CONTAINER(icon_layout));
+        for (GList *l = children; l != NULL; l = l->next) {
+            GtkWidget *item = GTK_WIDGET(l->data);
+            GtkAllocation alloc;
+            gtk_widget_get_allocation(item, &alloc);
+            
+            if (alloc.x < x + w && alloc.x + alloc.width > x &&
+                alloc.y < y + h && alloc.y + alloc.height > y) {
+                select_item(item);
+            } else {
+                deselect_item(item);
+            }
+        }
+        g_list_free(children);
     }
     return FALSE;
 }
@@ -547,7 +822,7 @@ static gboolean on_bg_motion(GtkWidget *widget, GdkEventMotion *event, gpointer 
 static gboolean on_bg_button_release(GtkWidget *widget, GdkEventButton *event, gpointer data) {
     if (event->button == 1 && is_selecting) {
         is_selecting = FALSE;
-        gtk_widget_queue_draw(selection_layer);
+        gtk_widget_queue_draw(icon_layout);
     }
     return FALSE;
 }
@@ -557,60 +832,58 @@ static gboolean on_bg_button_release(GtkWidget *widget, GdkEventButton *event, g
 int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
 
-    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "Venom Pro Desktop");
-    gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_DESKTOP);
+    main_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(main_window), "Venom Pro Desktop");
+    gtk_window_set_type_hint(GTK_WINDOW(main_window), GDK_WINDOW_TYPE_HINT_DESKTOP);
     
-    GdkScreen *screen = gtk_widget_get_screen(window);
+    GdkScreen *screen = gtk_widget_get_screen(main_window);
     GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
     if (visual && gdk_screen_is_composited(screen)) {
-        gtk_widget_set_visual(window, visual);
-        gtk_widget_set_app_paintable(window, TRUE);
+        gtk_widget_set_visual(main_window, visual);
+        gtk_widget_set_app_paintable(main_window, TRUE);
     }
 
     GdkRectangle r;
     gdk_monitor_get_geometry(gdk_display_get_primary_monitor(gdk_display_get_default()), &r);
     screen_w = r.width;
     screen_h = r.height;
-    gtk_window_set_default_size(GTK_WINDOW(window), screen_w, screen_h);
-    gtk_window_move(GTK_WINDOW(window), 0, 0);
+    gtk_window_set_default_size(GTK_WINDOW(main_window), screen_w, screen_h);
+    gtk_window_move(GTK_WINDOW(main_window), 0, 0);
 
-    GtkWidget *overlay = gtk_overlay_new();
-    gtk_container_add(GTK_CONTAINER(window), overlay);
-
-    /* 1. Background Event Area */
-    selection_layer = gtk_drawing_area_new();
-    gtk_widget_set_hexpand(selection_layer, TRUE);
-    gtk_widget_set_vexpand(selection_layer, TRUE);
-    gtk_widget_add_events(selection_layer, 
-        GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_POINTER_MOTION_MASK);
-    
-    g_signal_connect(selection_layer, "draw", G_CALLBACK(on_selection_draw), NULL);
-    g_signal_connect(selection_layer, "button-press-event", G_CALLBACK(on_bg_button_press), NULL);
-    g_signal_connect(selection_layer, "motion-notify-event", G_CALLBACK(on_bg_motion), NULL);
-    g_signal_connect(selection_layer, "button-release-event", G_CALLBACK(on_bg_button_release), NULL);
-
-    gtk_container_add(GTK_CONTAINER(overlay), selection_layer);
-
-    /* 2. Icons Layer (GtkLayout for free positioning) */
     icon_layout = gtk_layout_new(NULL, NULL);
     gtk_widget_set_size_request(icon_layout, screen_w, screen_h);
+    gtk_widget_set_app_paintable(icon_layout, TRUE);
     
+    /* Setup Background as Drag Dest */
+    GtkTargetEntry targets[] = { { "text/uri-list", 0, 0 } };
+    gtk_drag_dest_set(icon_layout, GTK_DEST_DEFAULT_ALL, targets, 1, GDK_ACTION_MOVE | GDK_ACTION_COPY);
+    g_signal_connect(icon_layout, "drag-data-received", G_CALLBACK(on_bg_drag_data_received), NULL);
+    
+    gtk_widget_add_events(icon_layout, 
+        GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_POINTER_MOTION_MASK);
+    
+    g_signal_connect(icon_layout, "draw", G_CALLBACK(on_layout_draw_bg), NULL);
+    g_signal_connect_after(icon_layout, "draw", G_CALLBACK(on_layout_draw_fg), NULL);
+    
+    g_signal_connect(icon_layout, "button-press-event", G_CALLBACK(on_bg_button_press), NULL);
+    g_signal_connect(icon_layout, "motion-notify-event", G_CALLBACK(on_bg_motion), NULL);
+    g_signal_connect(icon_layout, "button-release-event", G_CALLBACK(on_bg_button_release), NULL);
+
+    gtk_container_add(GTK_CONTAINER(main_window), icon_layout);
+
     GtkCssProvider *css = gtk_css_provider_new();
     gtk_css_provider_load_from_data(css, 
         "window { background-color: transparent; }"
         "#desktop-item { background: transparent; border-radius: 5px; padding: 8px; transition: all 0.1s; }"
         "#desktop-item:hover { background: rgba(255,255,255,0.15); }"
-        "#desktop-item:selected { background: rgba(52, 152, 219, 0.4); }"
+        "#desktop-item.selected { background: rgba(52, 152, 219, 0.4); border: 1px solid rgba(52, 152, 219, 0.8); }"
         "label { color: white; text-shadow: 1px 1px 2px black; font-weight: bold; }", -1, NULL);
     gtk_style_context_add_provider_for_screen(screen, GTK_STYLE_PROVIDER(css), 800);
 
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), icon_layout);
-
     refresh_icons();
 
-    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-    gtk_widget_show_all(window);
+    g_signal_connect(main_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+    gtk_widget_show_all(main_window);
     malloc_trim(0);
     gtk_main();
 
