@@ -82,6 +82,11 @@ static gboolean get_item_position(const char *filename, int *x, int *y) {
 /* --- Recursive File Operations --- */
 
 static gboolean recursive_copy_move(GFile *src, GFile *dest, gboolean is_move, GError **error) {
+    if (g_file_has_prefix(dest, src)) {
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT, "Cannot copy directory into itself");
+        return FALSE;
+    }
+
     GFileInfo *info = g_file_query_info(src, G_FILE_ATTRIBUTE_STANDARD_TYPE, G_FILE_QUERY_INFO_NONE, NULL, error);
     if (!info) return FALSE;
     
@@ -200,16 +205,17 @@ static void open_file_uri(const char *uri) {
 
 static void refresh_icons();
 
-static void delete_file(const char *uri) {
+static gboolean delete_file(const char *uri) {
     GFile *file = g_file_new_for_uri(uri);
     GError *err = NULL;
-    if (g_file_trash(file, NULL, &err)) {
-        refresh_icons();
-    } else {
+    gboolean success = TRUE;
+    if (!g_file_trash(file, NULL, &err)) {
         g_warning("Trash failed: %s", err->message);
         g_error_free(err);
+        success = FALSE;
     }
     g_object_unref(file);
+    return success;
 }
 
 /* --- System Clipboard --- */
@@ -503,10 +509,24 @@ static void on_item_cut(GtkWidget *menuitem, gpointer data) { copy_selection_to_
 static void on_item_copy(GtkWidget *menuitem, gpointer data) { copy_selection_to_clipboard(FALSE); }
 static void on_item_open(GtkWidget *menuitem, gpointer data) { open_file_uri((char*)data); }
 static void on_item_delete(GtkWidget *menuitem, gpointer data) { 
+    GList *uris_to_delete = NULL;
+    
+    /* Collect URIs first to avoid modifying the list while iterating */
     for (GList *l = selected_items; l != NULL; l = l->next) {
         char *uri = (char *)g_object_get_data(G_OBJECT(l->data), "uri");
-        delete_file(uri);
+        if (uri) {
+            uris_to_delete = g_list_prepend(uris_to_delete, g_strdup(uri));
+        }
     }
+    
+    /* Perform deletion */
+    for (GList *l = uris_to_delete; l != NULL; l = l->next) {
+        delete_file((char *)l->data);
+        g_free(l->data);
+    }
+    g_list_free(uris_to_delete);
+    
+    refresh_icons();
 }
 
 static gboolean on_item_button_press(GtkWidget *widget, GdkEventButton *event, gpointer data) {
@@ -555,25 +575,43 @@ static gboolean on_item_button_press(GtkWidget *widget, GdkEventButton *event, g
         }
 
         GtkWidget *menu = gtk_menu_new();
-        GtkWidget *i_open = gtk_menu_item_new_with_label("Open");
-        GtkWidget *i_cut = gtk_menu_item_new_with_label("Cut");
-        GtkWidget *i_copy = gtk_menu_item_new_with_label("Copy");
-        GtkWidget *i_rename = gtk_menu_item_new_with_label("Rename");
-        GtkWidget *i_del = gtk_menu_item_new_with_label("Move to Trash");
         
-        g_signal_connect(i_open, "activate", G_CALLBACK(on_item_open), uri);
-        g_signal_connect(i_cut, "activate", G_CALLBACK(on_item_cut), NULL);
-        g_signal_connect(i_copy, "activate", G_CALLBACK(on_item_copy), NULL);
-        g_signal_connect(i_rename, "activate", G_CALLBACK(on_item_rename), uri);
-        g_signal_connect(i_del, "activate", G_CALLBACK(on_item_delete), NULL);
-        
-        gtk_menu_shell_append(GTK_MENU_SHELL(menu), i_open);
-        gtk_menu_shell_append(GTK_MENU_SHELL(menu), gtk_separator_menu_item_new());
-        gtk_menu_shell_append(GTK_MENU_SHELL(menu), i_cut);
-        gtk_menu_shell_append(GTK_MENU_SHELL(menu), i_copy);
-        gtk_menu_shell_append(GTK_MENU_SHELL(menu), i_rename);
-        gtk_menu_shell_append(GTK_MENU_SHELL(menu), gtk_separator_menu_item_new());
-        gtk_menu_shell_append(GTK_MENU_SHELL(menu), i_del);
+        if (g_list_length(selected_items) > 1) {
+            /* Multi-Selection Menu */
+            GtkWidget *i_cut = gtk_menu_item_new_with_label("Cut");
+            GtkWidget *i_copy = gtk_menu_item_new_with_label("Copy");
+            GtkWidget *i_del = gtk_menu_item_new_with_label("Move to Trash");
+            
+            g_signal_connect(i_cut, "activate", G_CALLBACK(on_item_cut), NULL);
+            g_signal_connect(i_copy, "activate", G_CALLBACK(on_item_copy), NULL);
+            g_signal_connect(i_del, "activate", G_CALLBACK(on_item_delete), NULL);
+            
+            gtk_menu_shell_append(GTK_MENU_SHELL(menu), i_cut);
+            gtk_menu_shell_append(GTK_MENU_SHELL(menu), i_copy);
+            gtk_menu_shell_append(GTK_MENU_SHELL(menu), gtk_separator_menu_item_new());
+            gtk_menu_shell_append(GTK_MENU_SHELL(menu), i_del);
+        } else {
+            /* Single Item Menu */
+            GtkWidget *i_open = gtk_menu_item_new_with_label("Open");
+            GtkWidget *i_cut = gtk_menu_item_new_with_label("Cut");
+            GtkWidget *i_copy = gtk_menu_item_new_with_label("Copy");
+            GtkWidget *i_rename = gtk_menu_item_new_with_label("Rename");
+            GtkWidget *i_del = gtk_menu_item_new_with_label("Move to Trash");
+            
+            g_signal_connect(i_open, "activate", G_CALLBACK(on_item_open), uri);
+            g_signal_connect(i_cut, "activate", G_CALLBACK(on_item_cut), NULL);
+            g_signal_connect(i_copy, "activate", G_CALLBACK(on_item_copy), NULL);
+            g_signal_connect(i_rename, "activate", G_CALLBACK(on_item_rename), uri);
+            g_signal_connect(i_del, "activate", G_CALLBACK(on_item_delete), NULL);
+            
+            gtk_menu_shell_append(GTK_MENU_SHELL(menu), i_open);
+            gtk_menu_shell_append(GTK_MENU_SHELL(menu), gtk_separator_menu_item_new());
+            gtk_menu_shell_append(GTK_MENU_SHELL(menu), i_cut);
+            gtk_menu_shell_append(GTK_MENU_SHELL(menu), i_copy);
+            gtk_menu_shell_append(GTK_MENU_SHELL(menu), i_rename);
+            gtk_menu_shell_append(GTK_MENU_SHELL(menu), gtk_separator_menu_item_new());
+            gtk_menu_shell_append(GTK_MENU_SHELL(menu), i_del);
+        }
         
         gtk_widget_show_all(menu);
         gtk_menu_popup_at_pointer(GTK_MENU(menu), (GdkEvent*)event);
