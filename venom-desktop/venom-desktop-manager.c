@@ -1,6 +1,6 @@
 /*
  * venom-desktop-manager.c
- * Pro Desktop: Free Positioning, System Clipboard, Transparent Background, Multi-Selection, Drag-and-Drop (System).
+ * Pro Desktop: Free Positioning, Smart Grid (No Stacking), Recursive Copy, System DnD.
  *
  * Compile:
  * gcc -o venom-desktop-manager venom-desktop-manager.c $(pkg-config --cflags --libs gtk+-3.0 gio-2.0 gdesktop-app-info-1.0) -lm
@@ -39,7 +39,6 @@ static GList *selected_items = NULL;
 /* Drag State (System DnD) */
 static double drag_start_x_root = 0;
 static double drag_start_y_root = 0;
-/* Map widget -> Point(start_x, start_y) for all selected items */
 static GHashTable *drag_initial_positions = NULL; 
 
 /* --- Helper Functions --- */
@@ -77,6 +76,60 @@ static gboolean get_item_position(const char *filename, int *x, int *y) {
     *x = px;
     *y = py;
     g_key_file_free(key_file);
+    return TRUE;
+}
+
+/* --- Recursive File Operations --- */
+
+static gboolean recursive_copy_move(GFile *src, GFile *dest, gboolean is_move, GError **error) {
+    GFileInfo *info = g_file_query_info(src, G_FILE_ATTRIBUTE_STANDARD_TYPE, G_FILE_QUERY_INFO_NONE, NULL, error);
+    if (!info) return FALSE;
+    
+    GFileType type = g_file_info_get_file_type(info);
+    g_object_unref(info);
+
+    if (type == G_FILE_TYPE_DIRECTORY) {
+        if (!g_file_make_directory(dest, NULL, error)) {
+            /* Ignore error if directory exists */
+            if (!g_error_matches(*error, G_IO_ERROR, G_IO_ERROR_EXISTS)) {
+                return FALSE;
+            }
+            g_clear_error(error);
+        }
+
+        GFileEnumerator *enumerator = g_file_enumerate_children(src, G_FILE_ATTRIBUTE_STANDARD_NAME, G_FILE_QUERY_INFO_NONE, NULL, error);
+        if (!enumerator) return FALSE;
+
+        GFileInfo *child_info;
+        while ((child_info = g_file_enumerator_next_file(enumerator, NULL, NULL))) {
+            const char *name = g_file_info_get_name(child_info);
+            GFile *child_src = g_file_get_child(src, name);
+            GFile *child_dest = g_file_get_child(dest, name);
+            
+            if (!recursive_copy_move(child_src, child_dest, is_move, error)) {
+                g_object_unref(child_src);
+                g_object_unref(child_dest);
+                g_object_unref(child_info);
+                g_object_unref(enumerator);
+                return FALSE;
+            }
+            
+            g_object_unref(child_src);
+            g_object_unref(child_dest);
+            g_object_unref(child_info);
+        }
+        g_object_unref(enumerator);
+
+        if (is_move) {
+            return g_file_delete(src, NULL, error);
+        }
+    } else {
+        if (is_move) {
+            return g_file_move(src, dest, G_FILE_COPY_OVERWRITE, NULL, NULL, NULL, error);
+        } else {
+            return g_file_copy(src, dest, G_FILE_COPY_OVERWRITE, NULL, NULL, NULL, error);
+        }
+    }
     return TRUE;
 }
 
@@ -230,11 +283,7 @@ static void on_paste_received(GtkClipboard *clipboard, GtkSelectionData *selecti
         GFile *dest = g_file_new_for_path(dest_path);
         
         GError *err = NULL;
-        if (is_cut) {
-            g_file_move(src, dest, G_FILE_COPY_NONE, NULL, NULL, NULL, &err);
-        } else {
-            g_file_copy(src, dest, G_FILE_COPY_NONE, NULL, NULL, NULL, &err);
-        }
+        recursive_copy_move(src, dest, is_cut, &err);
 
         if (err) {
             g_warning("Paste error: %s", err->message);
@@ -275,18 +324,10 @@ static void on_drag_begin(GtkWidget *widget, GdkDragContext *context, gpointer d
         }
         
         if (image) {
-            /* Try to get pixbuf from image */
             switch (gtk_image_get_storage_type(GTK_IMAGE(image))) {
                 case GTK_IMAGE_PIXBUF: {
                     GdkPixbuf *pixbuf = gtk_image_get_pixbuf(GTK_IMAGE(image));
                     if (pixbuf) gtk_drag_set_icon_pixbuf(context, pixbuf, 24, 24);
-                    break;
-                }
-                case GTK_IMAGE_GICON: {
-                    /* If it's a GIcon, we might need to render it, but for simplicity fallback to default or try to get pixbuf if possible. 
-                       Actually, gtk_image_get_pixbuf might return NULL if it's GICON. 
-                       Let's just use default if pixbuf is not directly available to avoid complexity. */
-                    gtk_drag_set_icon_default(context);
                     break;
                 }
                 default:
@@ -336,7 +377,7 @@ static void on_folder_drag_data_received(GtkWidget *widget, GdkDragContext *cont
                 GFile *dest = g_file_new_for_path(dest_path);
                 
                 GError *err = NULL;
-                g_file_move(src, dest, G_FILE_COPY_NONE, NULL, NULL, NULL, &err);
+                recursive_copy_move(src, dest, TRUE, &err); /* Always move for DnD to folder? Or Copy? Standard is Move on same fs. */
                 
                 if (err) {
                     g_warning("DnD Move failed: %s", err->message);
@@ -365,20 +406,6 @@ static void on_bg_drag_data_received(GtkWidget *widget, GdkDragContext *context,
     if (source_widget && GTK_IS_WIDGET(source_widget) && 
         g_strcmp0(gtk_widget_get_name(source_widget), "desktop-item") == 0) {
         
-        double dx = x - drag_start_x_root; /* Approximate delta */
-        /* Note: x is relative to icon_layout. drag_start_x_root is root. 
-           Since icon_layout is full screen at 0,0, x should be roughly x_root.
-           However, let's refine:
-           We stored initial positions in drag_initial_positions.
-           New Pos = Initial Pos + (Current Mouse - Start Mouse).
-           
-           Wait, 'x' here is the drop point.
-           So New Pos = Initial Pos + (x - drag_start_x_root).
-           
-           Correction: drag_start_x_root was captured at button press.
-           x is current mouse pos relative to layout (which is screen).
-        */
-       
         double delta_x = x - drag_start_x_root;
         double delta_y = y - drag_start_y_root;
 
@@ -419,13 +446,7 @@ static void on_bg_drag_data_received(GtkWidget *widget, GdkDragContext *context,
             GFile *dest = g_file_new_for_path(dest_path);
             
             GError *err = NULL;
-            /* Try move first (if same fs), else copy? 
-               Standard behavior: Copy if different device, Move if same?
-               Let's default to Copy for safety, or Move if user intent?
-               Usually DnD defaults to Copy unless Shift is held.
-               Let's do Copy.
-            */
-            g_file_copy(src, dest, G_FILE_COPY_NONE, NULL, NULL, NULL, &err);
+            recursive_copy_move(src, dest, FALSE, &err); /* Copy by default for import */
             
             if (err) {
                 g_warning("Import failed: %s", err->message);
@@ -599,7 +620,7 @@ static void on_refresh_clicked(GtkWidget *item, gpointer data) {
     refresh_icons();
 }
 
-/* --- Icon Loading --- */
+/* --- Icon Loading & Placement --- */
 
 static GtkWidget* create_desktop_item(GFileInfo *info, const char *full_path) {
     const char *filename = g_file_info_get_name(info);
@@ -668,13 +689,17 @@ static GtkWidget* create_desktop_item(GFileInfo *info, const char *full_path) {
     return btn;
 }
 
+static gint sort_file_info(gconstpointer a, gconstpointer b) {
+    GFileInfo *ia = (GFileInfo *)a;
+    GFileInfo *ib = (GFileInfo *)b;
+    return g_ascii_strcasecmp(g_file_info_get_display_name(ia), g_file_info_get_display_name(ib));
+}
+
 static void refresh_icons() {
     /* Clear existing children */
     GList *children, *iter;
     children = gtk_container_get_children(GTK_CONTAINER(icon_layout));
-    
     deselect_all();
-    
     for (iter = children; iter != NULL; iter = g_list_next(iter))
         gtk_widget_destroy(GTK_WIDGET(iter->data));
     g_list_free(children);
@@ -687,34 +712,92 @@ static void refresh_icons() {
         "standard::*", G_FILE_QUERY_INFO_NONE, NULL, NULL);
 
     if (enumerator) {
+        GList *file_list = NULL;
         GFileInfo *info;
-        int grid_x = GRID_X;
-        int grid_y = GRID_Y;
-        
         while ((info = g_file_enumerator_next_file(enumerator, NULL, NULL))) {
             const char *fname = g_file_info_get_name(info);
             if (fname[0] != '.') {
-                char *full_path = g_strdup_printf("%s/%s", desktop_path, fname);
-                GtkWidget *item = create_desktop_item(info, full_path);
+                file_list = g_list_prepend(file_list, info);
+            } else {
+                g_object_unref(info);
+            }
+        }
+        g_object_unref(enumerator);
+        
+        /* Sort files alphabetically */
+        file_list = g_list_sort(file_list, sort_file_info);
+        
+        /* Placement Logic:
+           1. Place items with saved positions. Mark spots as occupied.
+           2. Place remaining items in first available grid spot.
+        */
+        
+        GList *pending_items = NULL;
+        GList *occupied_rects = NULL; /* List of GdkRectangle* */
+        
+        for (GList *l = file_list; l != NULL; l = l->next) {
+            info = (GFileInfo *)l->data;
+            const char *fname = g_file_info_get_name(info);
+            char *full_path = g_strdup_printf("%s/%s", desktop_path, fname);
+            GtkWidget *item = create_desktop_item(info, full_path);
+            g_free(full_path);
+            
+            int x, y;
+            if (get_item_position(fname, &x, &y)) {
+                gtk_layout_put(GTK_LAYOUT(icon_layout), item, x, y);
+                GdkRectangle *r = g_new(GdkRectangle, 1);
+                r->x = x; r->y = y; r->width = ITEM_WIDTH; r->height = ITEM_HEIGHT;
+                occupied_rects = g_list_prepend(occupied_rects, r);
+            } else {
+                /* Store for pass 2 */
+                pending_items = g_list_append(pending_items, item);
+            }
+        }
+        
+        /* Pass 2: Place pending items */
+        int grid_x = GRID_X;
+        int grid_y = GRID_Y;
+        
+        for (GList *l = pending_items; l != NULL; l = l->next) {
+            GtkWidget *item = GTK_WIDGET(l->data);
+            
+            /* Find next free spot */
+            while (TRUE) {
+                gboolean collision = FALSE;
+                GdkRectangle candidate = { grid_x, grid_y, ITEM_WIDTH, ITEM_HEIGHT };
                 
-                int x, y;
-                if (get_item_position(fname, &x, &y)) {
-                    gtk_layout_put(GTK_LAYOUT(icon_layout), item, x, y);
-                } else {
-                    /* Auto-placement */
-                    gtk_layout_put(GTK_LAYOUT(icon_layout), item, grid_x, grid_y);
-                    grid_y += ITEM_HEIGHT + 10;
-                    if (grid_y > screen_h - ITEM_HEIGHT) {
-                        grid_y = GRID_Y;
-                        grid_x += ITEM_WIDTH + 10;
+                for (GList *r_node = occupied_rects; r_node != NULL; r_node = r_node->next) {
+                    GdkRectangle *occ = (GdkRectangle *)r_node->data;
+                    if (gdk_rectangle_intersect(&candidate, occ, NULL)) {
+                        collision = TRUE;
+                        break;
                     }
                 }
                 
-                g_free(full_path);
+                if (!collision) {
+                    break; /* Found spot */
+                }
+                
+                /* Move to next grid slot */
+                grid_y += ITEM_HEIGHT + 10;
+                if (grid_y > screen_h - ITEM_HEIGHT) {
+                    grid_y = GRID_Y;
+                    grid_x += ITEM_WIDTH + 10;
+                }
             }
-            g_object_unref(info);
+            
+            gtk_layout_put(GTK_LAYOUT(icon_layout), item, grid_x, grid_y);
+            
+            /* Mark as occupied */
+            GdkRectangle *r = g_new(GdkRectangle, 1);
+            r->x = grid_x; r->y = grid_y; r->width = ITEM_WIDTH; r->height = ITEM_HEIGHT;
+            occupied_rects = g_list_prepend(occupied_rects, r);
         }
-        g_object_unref(enumerator);
+        
+        /* Cleanup */
+        g_list_free(pending_items); // Widgets are owned by container now
+        g_list_free_full(file_list, g_object_unref);
+        g_list_free_full(occupied_rects, g_free);
     }
     g_object_unref(dir);
     g_free(desktop_path);
