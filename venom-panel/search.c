@@ -70,17 +70,24 @@ static void on_file_result_activated(GtkListBox *box, GtkListBoxRow *row, gpoint
     const gchar *path = g_object_get_data(G_OBJECT(child), "file-path");
     
     if (path) {
-        gchar *uri = g_filename_to_uri(path, NULL, NULL);
+        /* Open file in the default file manager */
+        GError *error = NULL;
+        
+        /* Get the directory of the file */
+        gchar *directory = g_path_get_dirname(path);
+        gchar *uri = g_filename_to_uri(directory, NULL, NULL);
+        
         if (uri) {
-            gtk_show_uri_on_window(GTK_WINDOW(window), uri, GDK_CURRENT_TIME, NULL);
-            g_free(uri);
-            /* Close launcher if passed */
-            if (window) {
-                gtk_widget_destroy(window);
-                /* We can't nullify global pointers here easily without access, 
-                   but destroy signal in launcher.c handles cleanup */
+            /* Try to open with file manager */
+            g_app_info_launch_default_for_uri(uri, NULL, &error);
+            
+            if (error) {
+                g_warning("Failed to open file manager: %s", error->message);
+                g_error_free(error);
             }
+            g_free(uri);
         }
+        g_free(directory);
     }
 }
 
@@ -91,18 +98,25 @@ static void show_file_results_dialog(GtkWidget *parent, const gchar *term, GList
                                                     GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
                                                     "_Close", GTK_RESPONSE_CLOSE,
                                                     NULL);
-    gtk_window_set_default_size(GTK_WINDOW(dialog), 500, 400);
+    /* زيادة حجم النافذة لعرض النتائج بشكل أفضل */
+    gtk_window_set_default_size(GTK_WINDOW(dialog), 800, 600);
+    gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER);
     
     GtkWidget *content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    gtk_container_set_border_width(GTK_CONTAINER(content_area), 10);
     
     if (files == NULL) {
         GtkWidget *label = gtk_label_new("No files found.");
         gtk_container_add(GTK_CONTAINER(content_area), label);
     } else {
+        /* Scrolled window that expands to fill the dialog */
         GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL);
+        gtk_widget_set_vexpand(scrolled, TRUE);
+        gtk_widget_set_hexpand(scrolled, TRUE);
         gtk_container_add(GTK_CONTAINER(content_area), scrolled);
         
         GtkWidget *listbox = gtk_list_box_new();
+        gtk_list_box_set_selection_mode(GTK_LIST_BOX(listbox), GTK_SELECTION_SINGLE);
         gtk_container_add(GTK_CONTAINER(scrolled), listbox);
         g_signal_connect(listbox, "row-activated", G_CALLBACK(on_file_result_activated), parent);
         
@@ -110,25 +124,36 @@ static void show_file_results_dialog(GtkWidget *parent, const gchar *term, GList
             gchar *path = (gchar *)l->data;
             gchar *basename = g_path_get_basename(path);
             
-            GtkWidget *row_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+            /* Create a more prominent row */
+            GtkWidget *row_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+            gtk_widget_set_margin_start(row_box, 15);
+            gtk_widget_set_margin_end(row_box, 15);
+            gtk_widget_set_margin_top(row_box, 10);
+            gtk_widget_set_margin_bottom(row_box, 10);
             g_object_set_data_full(G_OBJECT(row_box), "file-path", g_strdup(path), g_free);
             
+            /* File name - bold and larger */
             GtkWidget *name_label = gtk_label_new(basename);
             gtk_widget_set_halign(name_label, GTK_ALIGN_START);
-            gchar *markup = g_strdup_printf("<b>%s</b>", basename);
+            gchar *markup = g_strdup_printf("<b><span size='large'>%s</span></b>", basename);
             gtk_label_set_markup(GTK_LABEL(name_label), markup);
+            gtk_label_set_line_wrap(GTK_LABEL(name_label), TRUE);
             g_free(markup);
             
+            /* Full path - smaller and dimmed */
             GtkWidget *path_label = gtk_label_new(path);
             gtk_widget_set_halign(path_label, GTK_ALIGN_START);
-            gtk_label_set_ellipsize(GTK_LABEL(path_label), PANGO_ELLIPSIZE_START);
+            gtk_label_set_ellipsize(GTK_LABEL(path_label), PANGO_ELLIPSIZE_MIDDLE);
+            gtk_label_set_line_wrap(GTK_LABEL(path_label), TRUE);
             GtkStyleContext *context = gtk_widget_get_style_context(path_label);
             gtk_style_context_add_class(context, "dim-label");
+            gchar *path_markup = g_strdup_printf("<span size='small' foreground='#888888'>%s</span>", path);
+            gtk_label_set_markup(GTK_LABEL(path_label), path_markup);
+            g_free(path_markup);
             
             gtk_box_pack_start(GTK_BOX(row_box), name_label, FALSE, FALSE, 0);
             gtk_box_pack_start(GTK_BOX(row_box), path_label, FALSE, FALSE, 0);
             
-            gtk_container_set_border_width(GTK_CONTAINER(row_box), 10);
             gtk_container_add(GTK_CONTAINER(listbox), row_box);
             
             g_free(basename);
