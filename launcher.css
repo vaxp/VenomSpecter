@@ -1,0 +1,94 @@
+#launcher-window {
+    background-color: rgba(0, 0, 0, 0.85);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+
+
+entry:focus {
+    background-color: rgba(0, 0, 0, 0.295);
+    border-color: #00ffc8;
+    box-shadow: 0 0 0 2px rgba(0, 255, 200, 0.4);
+}
+
+entry selection {
+    background-color: #00ffbf;
+    color: white; 
+}
+
+
+/* Search Results */
+#search_results_scroll {
+    background-color: transparent;
+}
+
+/* AI Chat Window */
+#ai-window {
+    background-color: rgba(20, 20, 20, 0.95);
+    color: white;
+}
+
+#ai-window entry {
+    background-color: rgba(40, 40, 40, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#ai-window textview {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    color: #e0e0e0;
+    font-family: 'Monospace';
+}
+
+#ai-window textview text {
+    background-color: transparent;
+}
+
+/* Dialogs (Password, Math, File) */
+dialog {
+    background-color: rgba(0, 0, 0, 0.3);
+    color: white;
+    border-radius: 15px;
+}
+
+dialog headerbar {
+    background-color: transparent;
+    border: none;
+    color: white;
+}
+
+dialog button {
+    background-color: rgba(0, 0, 0, 0.562);
+    margin: 5px;
+}
+
+dialog button:hover {
+    background-color: #3584e4;
+    color: white;
+}
+
+/* Typography */
+.h1 {
+    font-size: 24px;
+    font-weight: bold;
+    color: #3584e4;
+}
+
+.badge {
+    background-color: rgba(53, 132, 228, 0.2);
+    color: #3584e4;
+    border-radius: 5px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+label {
+    color: white;
+}
+
+.dim-label {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+}

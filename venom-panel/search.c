@@ -1,5 +1,4 @@
 #include "search.h"
-#include "launcher.h"
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -23,7 +22,7 @@ static gchar *show_password_dialog(GtkWidget *parent) {
     
     gtk_container_set_border_width(GTK_CONTAINER(dialog), 20);
     content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
-    gtk_box_set_spacing(GTK_BOX(content_area), 10);
+    gtk_box_set_spacing(GTK_BOX(content_area), 5);
 
     GtkWidget *icon = gtk_image_new_from_icon_name("dialog-password", GTK_ICON_SIZE_DIALOG);
     gtk_container_add(GTK_CONTAINER(content_area), icon);

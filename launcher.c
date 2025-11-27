@@ -283,6 +283,22 @@ void on_launcher_clicked(GtkWidget *widget, gpointer data) {
 }
 
 void create_launcher_button(GtkWidget *box) {
+    /* Load CSS */
+    GtkCssProvider *css_provider = gtk_css_provider_new();
+    GError *error = NULL;
+    
+    if (gtk_css_provider_load_from_path(css_provider, "launcher.css", &error)) {
+        gtk_style_context_add_provider_for_screen(
+            gdk_screen_get_default(),
+            GTK_STYLE_PROVIDER(css_provider),
+            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+        );
+    } else {
+        g_warning("Failed to load launcher.css: %s", error->message);
+        g_error_free(error);
+    }
+    g_object_unref(css_provider);
+    
     launcher_button = gtk_button_new_from_icon_name("start-here-symbolic", GTK_ICON_SIZE_BUTTON);
     gtk_widget_set_name(launcher_button, "launcher-button");
     g_signal_connect(launcher_button, "clicked", G_CALLBACK(on_launcher_clicked), NULL);
