@@ -3,6 +3,10 @@
 #include <string.h>
 #include <ctype.h>
 #include <gio/gdesktopappinfo.h>
+#include <sys/stat.h>
+
+/* Forward declaration */
+static void show_command_console(GtkWidget *parent, const gchar *command, const gchar *password);
 
 /* --- Dialog Implementations --- */
 
@@ -94,32 +98,98 @@ static void show_math_result_dialog(GtkWidget *parent, const gchar *expression, 
 /* File Results Dialog */
 static void on_file_result_activated(GtkListBox *box, GtkListBoxRow *row, gpointer data) {
     (void)box;
-    GtkWidget *dialog = GTK_WIDGET(data);  /* This is the dialog itself, not the parent */
+    GtkWidget *dialog = GTK_WIDGET(data);
     GtkWidget *child = gtk_bin_get_child(GTK_BIN(row));
     const gchar *path = g_object_get_data(G_OBJECT(child), "file-path");
     
     if (path) {
-        /* Open file in the default file manager */
-        GError *error = NULL;
-        
-        /* Get the directory of the file */
-        gchar *directory = g_path_get_dirname(path);
-        gchar *uri = g_filename_to_uri(directory, NULL, NULL);
-        
-        if (uri) {
-            /* Try to open with file manager */
-            g_app_info_launch_default_for_uri(uri, NULL, &error);
+        /* Check if it's a .deb file */
+        if (g_str_has_suffix(path, ".deb")) {
+            /* Show confirmation dialog */
+            GtkWidget *confirm = gtk_message_dialog_new(
+                GTK_WINDOW(dialog),
+                GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                GTK_MESSAGE_QUESTION,
+                GTK_BUTTONS_YES_NO,
+                "Install Package?");
             
-            if (error) {
-                g_warning("Failed to open file manager: %s", error->message);
-                g_error_free(error);
+            gchar *basename = g_path_get_basename(path);
+            gtk_message_dialog_format_secondary_text(GTK_MESSAGE_DIALOG(confirm),
+                "Install: %s", basename);
+            g_free(basename);
+            
+            gtk_window_set_decorated(GTK_WINDOW(confirm), FALSE);
+            
+            GtkCssProvider *css = gtk_css_provider_new();
+            gtk_css_provider_load_from_data(css, 
+                "dialog { background: rgba(0, 0, 0, 0.541); }"
+                "dialog label { color: white; }"
+                "dialog button { color: white; }", -1, NULL);
+            GtkStyleContext *ctx = gtk_widget_get_style_context(confirm);
+            gtk_style_context_add_provider(ctx, GTK_STYLE_PROVIDER(css), 
+                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+            g_object_unref(css);
+            
+            gint response = gtk_dialog_run(GTK_DIALOG(confirm));
+            gtk_widget_destroy(confirm);
+            
+            if (response == GTK_RESPONSE_YES) {
+                /* Ask for password */
+                gchar *password = show_password_dialog(dialog);
+                if (password) {
+                    /* Create a temp script file for sudo execution */
+                    gchar *script_path = g_strdup("/tmp/venom_install.sh");
+                    GError *write_error = NULL;
+                    
+                    gchar *script_content = g_strdup_printf(
+                        "#!/bin/bash\n"
+                        "apt-get update\n"
+                        "apt-get install -y '%s'\n"
+                        "apt-get install -f -y\n",
+                        path);
+                    
+                    if (g_file_set_contents(script_path, script_content, -1, &write_error)) {
+                        /* Make script executable */
+                        chmod(script_path, 0755);
+                        
+                        /* Build command with sudo -S */
+                        gchar *cmd = g_strdup_printf(
+                            "sudo -S bash '%s'",
+                            script_path);
+                        
+                        /* Show console with password */
+                        show_command_console(dialog, cmd, password);
+                        
+                        g_free(cmd);
+                    } else {
+                        g_warning("Failed to write script: %s", write_error->message);
+                        g_error_free(write_error);
+                    }
+                    
+                    g_free(script_content);
+                    g_free(script_path);
+                    g_free(password);
+                }
             }
-            g_free(uri);
+        } else {
+            /* Regular files - open in file manager */
+            GError *error = NULL;
+            gchar *directory = g_path_get_dirname(path);
+            gchar *uri = g_filename_to_uri(directory, NULL, NULL);
+            
+            if (uri) {
+                g_app_info_launch_default_for_uri(uri, NULL, &error);
+                if (error) {
+                    g_warning("Failed to open file manager: %s", error->message);
+                    g_error_free(error);
+                }
+                g_free(uri);
+            }
+            g_free(directory);
+            
+            /* Close dialog */
+            gtk_widget_destroy(dialog);
         }
-        g_free(directory);
-        
-        /* Close only the dialog window, not the parent */
-        gtk_widget_destroy(dialog);
     }
 }
 
@@ -296,8 +366,10 @@ static void on_console_close(GtkWidget *dialog, gint response, gpointer data) {
         console->stderr_watch = 0;
     }
     
-    /* Destroy the dialog */
-    gtk_widget_destroy(dialog);
+    /* Destroy the dialog only if it's still valid */
+    if (dialog && GTK_IS_WIDGET(dialog)) {
+        gtk_widget_destroy(dialog);
+    }
     
     g_free(console);
 }
