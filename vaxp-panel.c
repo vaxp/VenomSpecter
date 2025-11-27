@@ -154,6 +154,10 @@ int main(int argc, char *argv[]) {
     gtk_widget_set_name(box, "dock-box"); /* ID for CSS */
     gtk_widget_set_halign(box, GTK_ALIGN_CENTER);
     gtk_widget_set_valign(box, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top(box, 4);      /* Add vertical padding */
+    gtk_widget_set_margin_bottom(box, 4);
+    gtk_widget_set_margin_start(box, 8);    /* Add horizontal padding */
+    gtk_widget_set_margin_end(box, 8);
     gtk_container_add(GTK_CONTAINER(window), box);
 
     g_signal_connect(window, "realize", G_CALLBACK(on_dock_realize), NULL);
@@ -321,9 +325,9 @@ void update_window_list() {
                             GError *error = NULL;
                             
                             if (g_path_is_absolute(icon_name)) {
-                                group->icon = gdk_pixbuf_new_from_file_at_scale(icon_name, 36, 36, TRUE, &error);
+                                group->icon = gdk_pixbuf_new_from_file_at_scale(icon_name, 32, 32, TRUE, &error);
                             } else {
-                                group->icon = gtk_icon_theme_load_icon(icon_theme, icon_name, 36,
+                                group->icon = gtk_icon_theme_load_icon(icon_theme, icon_name, 32,
                                                                        GTK_ICON_LOOKUP_FORCE_SIZE, &error);
                             }
                             
@@ -375,7 +379,7 @@ void update_window_list() {
                 
                 /* Add icon to button */
                 if (group->icon) {
-                    GdkPixbuf *scaled = gdk_pixbuf_scale_simple(group->icon, 36, 36, GDK_INTERP_BILINEAR);
+                    GdkPixbuf *scaled = gdk_pixbuf_scale_simple(group->icon, 24, 24, GDK_INTERP_BILINEAR);
                     GtkWidget *image = gtk_image_new_from_pixbuf(scaled);
                     gtk_container_add(GTK_CONTAINER(button), image);
                     g_object_unref(scaled);
@@ -578,14 +582,14 @@ GdkPixbuf *get_window_icon(Window xwindow) {
                 if (icon_name != NULL) {
                     /* Check if it's an absolute path */
                     if (g_path_is_absolute(icon_name)) {
-                        pixbuf = gdk_pixbuf_new_from_file_at_scale(icon_name, 36, 36, TRUE, &error);
+                        pixbuf = gdk_pixbuf_new_from_file_at_scale(icon_name, 32, 32, TRUE, &error);
                         if (error) {
                             g_error_free(error);
                             error = NULL;
                         }
                     } else {
                         /* Load from icon theme */
-                        pixbuf = gtk_icon_theme_load_icon(icon_theme, icon_name, 36,
+                        pixbuf = gtk_icon_theme_load_icon(icon_theme, icon_name, 32,
                                                          GTK_ICON_LOOKUP_FORCE_SIZE, &error);
                         if (error) {
                             g_error_free(error);
@@ -605,7 +609,7 @@ GdkPixbuf *get_window_icon(Window xwindow) {
             }
             
             /* Fallback: try class/instance names directly in icon theme */
-            pixbuf = gtk_icon_theme_load_icon(icon_theme, class, 36,
+            pixbuf = gtk_icon_theme_load_icon(icon_theme, class, 32,
                                              GTK_ICON_LOOKUP_FORCE_SIZE, &error);
             if (error) {
                 g_error_free(error);
@@ -618,7 +622,7 @@ GdkPixbuf *get_window_icon(Window xwindow) {
             }
             
             gchar *lowercase_class = g_ascii_strdown(class, -1);
-            pixbuf = gtk_icon_theme_load_icon(icon_theme, lowercase_class, 36,
+            pixbuf = gtk_icon_theme_load_icon(icon_theme, lowercase_class, 32,
                                              GTK_ICON_LOOKUP_FORCE_SIZE, &error);
             g_free(lowercase_class);
             if (error) {
@@ -633,7 +637,7 @@ GdkPixbuf *get_window_icon(Window xwindow) {
             
             if (strlen(instance) > 0) {
                 gchar *lowercase_instance = g_ascii_strdown(instance, -1);
-                pixbuf = gtk_icon_theme_load_icon(icon_theme, lowercase_instance, 36,
+                pixbuf = gtk_icon_theme_load_icon(icon_theme, lowercase_instance, 32,
                                                  GTK_ICON_LOOKUP_FORCE_SIZE, &error);
                 g_free(lowercase_instance);
                 if (error) {
@@ -656,7 +660,7 @@ GdkPixbuf *get_window_icon(Window xwindow) {
     /* Method 3: Use generic fallback icon */
     GtkIconTheme *icon_theme = gtk_icon_theme_get_default();
     GError *error = NULL;
-    pixbuf = gtk_icon_theme_load_icon(icon_theme, "application-x-executable", 36,
+    pixbuf = gtk_icon_theme_load_icon(icon_theme, "application-x-executable", 32,
                                      GTK_ICON_LOOKUP_FORCE_SIZE, &error);
     if (error) {
         g_error_free(error);
