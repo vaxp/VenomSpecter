@@ -13,6 +13,7 @@
 #include "system-icons.h"
 #include "control-center.h"
 #include "search.h"
+#include "sni-client.h"
 
 static GtkWidget *control_center_window = NULL;
 static GtkWidget *search_entry = NULL;
@@ -171,6 +172,127 @@ static void toggle_control_center(GtkWidget *button, gpointer data) {
     }
 }
 
+/* =====================================================================
+ * 5. SYSTEM TRAY LOGIC
+ * ===================================================================== */
+
+static void on_menu_item_activate(GtkMenuItem *menuitem, gpointer data) {
+    const gchar *item_id = g_object_get_data(G_OBJECT(menuitem), "menu-id");
+    const gchar *tray_id = g_object_get_data(G_OBJECT(menuitem), "tray-id");
+    gint mid = atoi(item_id); // Simple atoi since id is int 
+    sni_client_menu_click(tray_id, mid);
+}
+
+static void on_tray_button_press(GtkButton *btn, GdkEventButton *event, gpointer data) {
+     (void)data;
+     const gchar *id = g_object_get_data(G_OBJECT(btn), "tray-id");
+     
+     /* Left Click -> Activate */
+     if (event->button == GDK_BUTTON_PRIMARY) {
+         if(id) {
+             gint x, y;
+             gdk_window_get_origin(gtk_widget_get_window(GTK_WIDGET(btn)), &x, &y);
+             GtkAllocation alloc;
+             gtk_widget_get_allocation(GTK_WIDGET(btn), &alloc);
+             sni_client_activate(id, x + alloc.width/2, y + alloc.height/2);
+         }
+     }
+     /* Right Click -> Menu */
+     else if (event->button == GDK_BUTTON_SECONDARY) {
+         if(!id) return;
+         
+         GList *menu_items = sni_client_get_menu(id);
+         if(!menu_items) return;
+         
+         GtkWidget *menu = gtk_menu_new();
+         
+         for(GList *l=menu_items; l; l=l->next) {
+             TrayMenuItem *item = (TrayMenuItem*)l->data;
+             
+             GtkWidget *mi;
+             if (g_strcmp0(item->type, "separator") == 0) {
+                 mi = gtk_separator_menu_item_new();
+             } else {
+                 if (item->toggle_type && strlen(item->toggle_type) > 0) {
+                     mi = gtk_check_menu_item_new_with_label(item->label ? item->label : "");
+                     gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(mi), item->toggle_state == 1);
+                 } else {
+                     mi = gtk_menu_item_new_with_label(item->label ? item->label : "");
+                 }
+                 
+                 /* Store IDs */
+                 gchar *mid_str = g_strdup_printf("%d", item->id);
+                 g_object_set_data_full(G_OBJECT(mi), "menu-id", mid_str, g_free);
+                 g_object_set_data_full(G_OBJECT(mi), "tray-id", g_strdup(id), g_free);
+                 
+                 g_signal_connect(mi, "activate", G_CALLBACK(on_menu_item_activate), NULL);
+                 
+                 if (!item->enabled) gtk_widget_set_sensitive(mi, FALSE);
+                 if (!item->visible) gtk_widget_set_visible(mi, FALSE);
+             }
+             
+             gtk_menu_shell_append(GTK_MENU_SHELL(menu), mi);
+             gtk_widget_show(mi);
+         }
+         
+         tray_menu_list_free(menu_items);
+         
+         gtk_menu_popup_at_widget(GTK_MENU(menu), GTK_WIDGET(btn), GDK_GRAVITY_NORTH, GDK_GRAVITY_SOUTH, (GdkEvent*)event);
+         // Note: popup_at_widget handles allocation automatically
+     }
+}
+
+
+static void on_tray_item_added(TrayItem *item, gpointer user_data) {
+    GtkWidget *box = GTK_WIDGET(user_data);
+    
+    /* Dedupe */
+    GList *children = gtk_container_get_children(GTK_CONTAINER(box));
+    for(GList *l=children; l; l=l->next) {
+        const char *eid = g_object_get_data(G_OBJECT(l->data), "tray-id");
+        if(eid && item->id && g_strcmp0(eid, item->id) == 0) {
+             g_list_free(children);
+             /* We could update icon here, but for now return */
+             return; 
+        }
+    }
+    g_list_free(children);
+    
+    GtkWidget *btn = gtk_button_new();
+    gtk_button_set_relief(GTK_BUTTON(btn), GTK_RELIEF_NONE);
+    if(item->title) gtk_widget_set_tooltip_text(btn, item->title);
+    g_object_set_data_full(G_OBJECT(btn), "tray-id", g_strdup(item->id), g_free);
+    
+    GtkWidget *img = NULL;
+    if (item->icon_pixbuf) {
+        GdkPixbuf *scaled = gdk_pixbuf_scale_simple(item->icon_pixbuf, 20, 20, GDK_INTERP_BILINEAR);
+        img = gtk_image_new_from_pixbuf(scaled);
+        g_object_unref(scaled);
+    } else {
+         img = gtk_image_new_from_icon_name(item->icon_name ? item->icon_name : "image-missing", GTK_ICON_SIZE_MENU);
+    }
+    gtk_container_add(GTK_CONTAINER(btn), img);
+    gtk_style_context_add_class(gtk_widget_get_style_context(btn), "tray-icon");
+    g_signal_connect(btn, "button-press-event", G_CALLBACK(on_tray_button_press), NULL);
+    
+    gtk_box_pack_start(GTK_BOX(box), btn, FALSE, FALSE, 0);
+    gtk_widget_show_all(btn);
+}
+
+static void on_tray_item_removed(const gchar *id, gpointer user_data) {
+    GtkWidget *box = GTK_WIDGET(user_data);
+    GList *children = gtk_container_get_children(GTK_CONTAINER(box));
+    for(GList *l=children; l; l=l->next) {
+        const char *eid = g_object_get_data(G_OBJECT(l->data), "tray-id");
+        if(eid && id && g_strcmp0(eid, id) == 0) {
+             gtk_widget_destroy(GTK_WIDGET(l->data));
+             break;
+        }
+    }
+    g_list_free(children);
+}
+
+
 GtkWidget* create_venom_panel(void) {
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
@@ -249,6 +371,28 @@ GtkWidget* create_venom_panel(void) {
     GtkWidget *r_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_widget_set_margin_end(r_box, 12);
     gtk_box_pack_end(GTK_BOX(hbox), r_box, FALSE, FALSE, 0);
+    
+
+    
+    /* Tray Area */
+    GtkWidget *tray_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    gtk_box_pack_start(GTK_BOX(r_box), tray_box, FALSE, FALSE, 0);
+
+    /* SNI Init */
+    sni_client_init();
+    
+    sni_client_on_item_added(on_tray_item_added, tray_box);
+    sni_client_on_item_removed(on_tray_item_removed, tray_box);
+    
+    /* Initial Fetch */
+    GList *items = sni_client_get_items();
+    for(GList *l=items; l; l=l->next) {
+        on_tray_item_added((TrayItem*)l->data, tray_box);
+        /* Note: on_tray_item_added does not free the item passed to it if we want to reuse logic cleanly,
+           BUT our create_tray_item allocates. on_tray_item_added copies ID. 
+           We should free the item here. */
+    }
+    tray_item_list_free(items);
     
     gtk_box_pack_start(GTK_BOX(r_box), create_system_icons(), FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(r_box), create_clock_widget(), FALSE, FALSE, 0);

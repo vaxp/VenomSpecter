@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================
-# Venom Notification Daemon - Installation Script
+# Venom SNI Daemon - Installation Script
 # ==============================================
 
 set -e
@@ -14,8 +14,8 @@ NC='\033[0m'
 
 # المسارات
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BINARY_NAME="venom_notify"
-SERVICE_NAME="venom-notify.service"
+BINARY_NAME="venom_sni"
+SERVICE_NAME="venom-sni.service"
 
 # تحديد المستخدم الحقيقي
 REAL_USER=$SUDO_USER
@@ -26,7 +26,7 @@ fi
 USER_ID=$(id -u "$REAL_USER")
 
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║   🔔 Venom Notification Daemon Installer   ║${NC}"
+echo -e "${BLUE}║   🔧 Venom SNI Daemon Installer            ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -68,10 +68,10 @@ su - "$REAL_USER" -c "export XDG_RUNTIME_DIR=/run/user/$USER_ID; systemctl --use
 su - "$REAL_USER" -c "export XDG_RUNTIME_DIR=/run/user/$USER_ID; systemctl --user restart ${SERVICE_NAME}"
 
 echo ""
-echo -e "${GREEN}✅ Venom Notification Daemon installed successfully!${NC}"
+echo -e "${GREEN}✅ Venom SNI Daemon installed successfully!${NC}"
 echo ""
 echo "   Status Check:  systemctl --user status ${SERVICE_NAME}"
 echo "   Logs Check:    journalctl --user -u ${SERVICE_NAME} -f"
 echo ""
-echo "   ⚠️  Note: This daemon replaces other notification daemons."
-echo "       Make sure to disable any other notification daemon."
+echo "   This daemon provides System Tray (StatusNotifierItem) support"
+echo "   for applications like Discord, Slack, etc."
