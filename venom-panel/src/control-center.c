@@ -26,6 +26,8 @@
 #include "notification-client.h"
 #include "brightness-manager.h"
 #include "network-client.h"
+#include "shot-client.h"
+#include "shot-client.h"
 
 // #include "control-center.h" /* Uncomment if you have this header */
 
@@ -399,6 +401,35 @@ static GtkWidget* create_controls_page(void) {
     /* Volume */
     GtkWidget *sound_section = create_slider_section("audio-volume-high-symbolic", "volume", G_CALLBACK(on_volume_changed));
     gtk_box_pack_start(GTK_BOX(box), sound_section, FALSE, FALSE, 0);
+
+    /* Separator */
+    GtkWidget *sep3 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_box_pack_start(GTK_BOX(box), sep3, FALSE, FALSE, 8);
+
+    /* Row 3: Capture Tools */
+    GtkWidget *row3 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    gtk_widget_set_halign(row3, GTK_ALIGN_CENTER);
+    gtk_box_pack_start(GTK_BOX(box), row3, FALSE, FALSE, 0);
+
+    /* Full Screenshot */
+    GtkWidget *btn_shot_full = create_small_tile("camera-photo-symbolic", "Full Shot");
+    g_signal_connect(btn_shot_full, "clicked", G_CALLBACK(shot_take_full_screenshot), NULL);
+    gtk_box_pack_start(GTK_BOX(row3), btn_shot_full, FALSE, FALSE, 0);
+
+    /* Region Screenshot */
+    GtkWidget *btn_shot_region = create_small_tile("transform-crop-symbolic", "Area Shot");
+    g_signal_connect(btn_shot_region, "clicked", G_CALLBACK(shot_take_region_screenshot), NULL);
+    gtk_box_pack_start(GTK_BOX(row3), btn_shot_region, FALSE, FALSE, 0);
+
+    /* Full Record */
+    GtkWidget *btn_rec_full = create_small_tile("camera-video-symbolic", "Full Rec");
+    g_signal_connect(btn_rec_full, "clicked", G_CALLBACK(shot_start_full_record), NULL);
+    gtk_box_pack_start(GTK_BOX(row3), btn_rec_full, FALSE, FALSE, 0);
+
+    /* Region Record */
+    GtkWidget *btn_rec_region = create_small_tile("media-record-symbolic", "Area Rec");
+    g_signal_connect(btn_rec_region, "clicked", G_CALLBACK(shot_start_region_record), NULL);
+    gtk_box_pack_start(GTK_BOX(row3), btn_rec_region, FALSE, FALSE, 0);
     
     return box;
 }
@@ -455,6 +486,7 @@ GtkWidget *create_control_center(void)
     brightness_manager_init();
     network_client_init();
     notification_client_init();
+    shot_client_init();
     notification_client_on_history_update(on_history_updated, NULL);
     
     _dbus_initialized = TRUE;
@@ -536,6 +568,7 @@ GtkWidget *create_control_center(void)
     g_signal_connect_swapped(window, "destroy", G_CALLBACK(brightness_manager_cleanup), NULL);
     g_signal_connect_swapped(window, "destroy", G_CALLBACK(notification_client_cleanup), NULL);
     g_signal_connect_swapped(window, "destroy", G_CALLBACK(network_client_cleanup), NULL);
+    g_signal_connect_swapped(window, "destroy", G_CALLBACK(shot_client_cleanup), NULL);
     
     /* Register for DND updates */
     notification_client_on_dnd_change(on_dnd_changed, NULL);
