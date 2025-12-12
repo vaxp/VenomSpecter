@@ -179,3 +179,65 @@ button {
 button:hover {
     background: rgba(0, 0, 0, 0.05);
 }
+/* --- Redesigned Control Center Styling --- */
+
+.brand-label {
+    font-family: "SF Pro Text", -apple-system, system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    color: #ffffff;
+    opacity: 0.9;
+}
+
+.tab-button {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 600;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+}
+
+.tab-button:hover {
+    color: rgba(255, 255, 255, 0.9);
+    background: transparent;
+}
+
+.tab-button.active-tab {
+    color: #00FFFF; /* Cyan for 'Controls' match the image vibe */
+    border-bottom: 2px solid #00FFFF;
+    opacity: 1.0;
+}
+
+.section-header {
+    font-size: 14px;
+    color: #ffffff;
+    margin-bottom: 8px;
+    opacity: 0.9;
+}
+
+/* Notification List Styling */
+.notification-app {
+    font-weight: bold;
+    color: #00FFFF;
+    font-size: 11px;
+}
+
+.notification-time {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 10px;
+}
+
+.notification-summary {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 12px;
+}
+
+.notification-body {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 11px;
+}

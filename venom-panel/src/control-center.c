@@ -38,6 +38,7 @@ static GtkWidget *_notifications_container = NULL;
 
 /* Network tile buttons */
 static GtkWidget *_wifi_button = NULL;
+static GtkWidget *_bluetooth_button = NULL;
 
 /* Forward declarations */
 static void on_volume_changed(GtkRange *range, gpointer data);
@@ -311,52 +312,51 @@ static GtkWidget *create_slider_section(const char *icon_name,
  * MAIN WINDOW
  * ===================================================================== */
 
-GtkWidget *create_control_center(void)
-{
-    /* Initialize clients */
-    brightness_manager_init();
-    network_client_init();
-    notification_client_init();
-    notification_client_on_history_update(on_history_updated, NULL);
-    
-    _dbus_initialized = TRUE;
+/* =====================================================================
+ * TABS & PAGES
+ * ===================================================================== */
 
-    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+static GtkWidget *_stack = NULL;
+static GtkWidget *_controls_btn = NULL;
+static GtkWidget *_notifs_btn = NULL;
 
-    /* ✅ 1. تفعيل الشفافية (Transparency Logic) */
-    GdkScreen *screen = gtk_widget_get_screen(window);
-    GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
-    
-    if (visual != NULL && gdk_screen_is_composited(screen)) {
-        gtk_widget_set_visual(window, visual);
-        gtk_widget_set_app_paintable(window, TRUE);
+static void on_tab_switch(GtkButton *btn, gpointer data) {
+    const char *page_name = (const char *)data;
+    if (_stack) {
+        gtk_stack_set_visible_child_name(GTK_STACK(_stack), page_name);
     }
-    /* ✅ نهاية كود الشفافية */
+    
+    /* Update styling for active tab */
+    GtkStyleContext *ctx_c = gtk_widget_get_style_context(_controls_btn);
+    GtkStyleContext *ctx_n = gtk_widget_get_style_context(_notifs_btn);
+    
+    gtk_style_context_remove_class(ctx_c, "active-tab");
+    gtk_style_context_remove_class(ctx_n, "active-tab");
+    
+    if (g_strcmp0(page_name, "controls") == 0) {
+        gtk_style_context_add_class(ctx_c, "active-tab");
+    } else {
+        gtk_style_context_add_class(ctx_n, "active-tab");
+    }
+}
 
-    gtk_window_set_title(GTK_WINDOW(window), "Control Center");
-    gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
-    gtk_window_set_default_size(GTK_WINDOW(window), 340, 520);
-    gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_DIALOG);
-    gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), TRUE);
-
-    /* Positioning logic (استخدمنا المتغير screen المعرف في الأعلى) */
-    gint screen_width = gdk_screen_get_width(screen);
-    gtk_window_move(GTK_WINDOW(window), screen_width - 360, 40);
-
-    GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 16);
-    gtk_container_set_border_width(GTK_CONTAINER(main_box), 16);
-    gtk_container_add(GTK_CONTAINER(window), main_box);
+static GtkWidget* create_controls_page(void) {
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 16);
+    gtk_widget_set_margin_top(box, 16);
+    gtk_widget_set_margin_bottom(box, 16);
+    gtk_widget_set_margin_start(box, 16);
+    gtk_widget_set_margin_end(box, 16);
 
     /* Row 1: Wi-Fi & Bluetooth */
     GtkWidget *row1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
-    gtk_box_pack_start(GTK_BOX(main_box), row1, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(box), row1, FALSE, FALSE, 0);
     
     gboolean wifi_on = wifi_client_is_enabled();
     GtkWidget *wifi = create_large_tile("network-wireless-symbolic", "Wi-Fi", 
                                         wifi_on ? "On" : "Off", wifi_on);
     g_signal_connect(wifi, "clicked", G_CALLBACK(on_wifi_clicked), NULL);
     g_signal_connect(wifi, "button-press-event", G_CALLBACK(on_wifi_button_press), NULL);
-    _wifi_button = wifi;  /* Store reference for updating UI */
+    _wifi_button = wifi;
     gtk_box_pack_start(GTK_BOX(row1), wifi, TRUE, TRUE, 0);
     
     gboolean bt_on = bluetooth_client_is_powered();
@@ -364,11 +364,12 @@ GtkWidget *create_control_center(void)
                                              bt_on ? "On" : "Off", bt_on);
     g_signal_connect(bluetooth, "clicked", G_CALLBACK(on_bluetooth_clicked), NULL);
     g_signal_connect(bluetooth, "button-press-event", G_CALLBACK(on_bluetooth_button_press), NULL);
+    _bluetooth_button = bluetooth;
     gtk_box_pack_start(GTK_BOX(row1), bluetooth, TRUE, TRUE, 0);
 
-    /* Row 2: Ethernet & AirDrop */
+    /* Row 2: Ethernet & Do Not Disturb */
     GtkWidget *row2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
-    gtk_box_pack_start(GTK_BOX(main_box), row2, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(box), row2, FALSE, FALSE, 0);
     
     gboolean eth_on = ethernet_client_is_connected();
     GtkWidget *ethernet = create_large_tile("network-wired-symbolic", "Ethernet", 
@@ -386,62 +387,146 @@ GtkWidget *create_control_center(void)
 
     /* Separators & Sliders */
     GtkWidget *sep1 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_box_pack_start(GTK_BOX(main_box), sep1, FALSE, FALSE, 8);
+    gtk_box_pack_start(GTK_BOX(box), sep1, FALSE, FALSE, 8);
 
-    /* Notifications Section Header with Clear Button */
-    GtkWidget *notif_header_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_set_margin_start(notif_header_box, 16);
-    gtk_widget_set_margin_end(notif_header_box, 16);
-    gtk_box_pack_start(GTK_BOX(main_box), notif_header_box, FALSE, FALSE, 0);
+    /* Brightness */
+    GtkWidget *brightness_section = create_slider_section("display-brightness-symbolic", "brightness", G_CALLBACK(on_brightness_changed));
+    gtk_box_pack_start(GTK_BOX(box), brightness_section, FALSE, FALSE, 0);
 
-    GtkWidget *notif_header = gtk_label_new(NULL);
-    gtk_widget_set_halign(notif_header, GTK_ALIGN_START);
-    char *header_markup = g_strdup_printf("<b>%s</b>", "Notifications");
-    gtk_label_set_markup(GTK_LABEL(notif_header), header_markup);
-    g_free(header_markup);
-    GtkStyleContext *header_ctx = gtk_widget_get_style_context(notif_header);
-    gtk_style_context_add_class(header_ctx, "section-header");
-    gtk_box_pack_start(GTK_BOX(notif_header_box), notif_header, TRUE, TRUE, 0);
+    GtkWidget *sep2 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_box_pack_start(GTK_BOX(box), sep2, FALSE, FALSE, 8);
+
+    /* Volume */
+    GtkWidget *sound_section = create_slider_section("audio-volume-high-symbolic", "volume", G_CALLBACK(on_volume_changed));
+    gtk_box_pack_start(GTK_BOX(box), sound_section, FALSE, FALSE, 0);
+    
+    return box;
+}
+
+static GtkWidget* create_notifications_page(void) {
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    
+    /* Header Container */
+    GtkWidget *header_container = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_margin_start(header_container, 16);
+    gtk_widget_set_margin_end(header_container, 16);
+    gtk_widget_set_margin_top(header_container, 12);
+    gtk_widget_set_margin_bottom(header_container, 8);
+    gtk_box_pack_start(GTK_BOX(box), header_container, FALSE, FALSE, 0);
+
+    /* Notifications Title */
+    GtkWidget *title = gtk_label_new("Recent");
+    gtk_widget_set_halign(title, GTK_ALIGN_START);
+    GtkStyleContext *ctx = gtk_widget_get_style_context(title);
+    gtk_style_context_add_class(ctx, "section-header");
+    gtk_box_pack_start(GTK_BOX(header_container), title, TRUE, TRUE, 0);
 
     /* Clear Button */
     GtkWidget *clear_btn = gtk_button_new_from_icon_name("edit-clear-symbolic", GTK_ICON_SIZE_MENU);
     gtk_widget_set_tooltip_text(clear_btn, "Clear All");
     gtk_widget_set_halign(clear_btn, GTK_ALIGN_END);
-    gtk_widget_set_valign(clear_btn, GTK_ALIGN_CENTER);
     g_signal_connect(clear_btn, "clicked", G_CALLBACK(on_clear_notifications_clicked), NULL);
-    
-    /* Make button flat and small */
     GtkStyleContext *clear_ctx = gtk_widget_get_style_context(clear_btn);
     gtk_style_context_add_class(clear_ctx, GTK_STYLE_CLASS_FLAT);
+    gtk_box_pack_end(GTK_BOX(header_container), clear_btn, FALSE, FALSE, 0);
+
+    /* Scrollable Area */
+    GtkWidget *scroll = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    gtk_box_pack_start(GTK_BOX(box), scroll, TRUE, TRUE, 0);
     
-    gtk_box_pack_end(GTK_BOX(notif_header_box), clear_btn, FALSE, FALSE, 0);
-
-    /* Scrollable notifications list */
-    GtkWidget *notif_scroll = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(notif_scroll), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-    gtk_widget_set_size_request(notif_scroll, -1, 150);
-    gtk_box_pack_start(GTK_BOX(main_box), notif_scroll, FALSE, FALSE, 0);
-
-    /* Notifications list container */
+    /* List Container */
     _notifications_list = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_container_add(GTK_CONTAINER(notif_scroll), _notifications_list);
-
-    /* Load notifications from daemon */
+    gtk_container_add(GTK_CONTAINER(scroll), _notifications_list);
+    
+    /* Initial Load */
     refresh_notifications_list();
+    
+    return box;
+}
 
-    GtkWidget *sep2 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_box_pack_start(GTK_BOX(main_box), sep2, FALSE, FALSE, 8);
+/* =====================================================================
+ * MAIN WINDOW
+ * ===================================================================== */
 
-    /* Brightness */
-    GtkWidget *brightness_section = create_slider_section("display-brightness-symbolic", "brightness", G_CALLBACK(on_brightness_changed));
-    gtk_box_pack_start(GTK_BOX(main_box), brightness_section, FALSE, FALSE, 0);
+GtkWidget *create_control_center(void)
+{
+    /* Initialize clients */
+    brightness_manager_init();
+    network_client_init();
+    notification_client_init();
+    notification_client_on_history_update(on_history_updated, NULL);
+    
+    _dbus_initialized = TRUE;
 
-    GtkWidget *sep3 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_box_pack_start(GTK_BOX(main_box), sep3, FALSE, FALSE, 8);
+    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
-    /* Volume */
-    GtkWidget *sound_section = create_slider_section("audio-volume-high-symbolic", "volume", G_CALLBACK(on_volume_changed));
-    gtk_box_pack_start(GTK_BOX(main_box), sound_section, FALSE, FALSE, 0);
+    /* ✅ 1. Activate Transparency */
+    GdkScreen *screen = gtk_widget_get_screen(window);
+    GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
+    
+    if (visual != NULL && gdk_screen_is_composited(screen)) {
+        gtk_widget_set_visual(window, visual);
+        gtk_widget_set_app_paintable(window, TRUE);
+    }
+    /* ✅ End Transparency */
+
+    gtk_window_set_title(GTK_WINDOW(window), "Control Center");
+    gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
+    gtk_window_set_default_size(GTK_WINDOW(window), 360, 560); /* Slightly larger for tabs */
+    gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_DIALOG);
+    gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), TRUE);
+
+    /* Positioning logic */
+    gint screen_width = gdk_screen_get_width(screen);
+    gtk_window_move(GTK_WINDOW(window), screen_width - 380, 40);
+
+    /* Main Container */
+    GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_container_add(GTK_CONTAINER(window), main_box);
+
+    /* --- HEADER BAR (Venom Label + Tabs) --- */
+    GtkWidget *header_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_margin_top(header_bar, 16);
+    gtk_widget_set_margin_bottom(header_bar, 8);
+    gtk_widget_set_margin_start(header_bar, 16);
+    gtk_widget_set_margin_end(header_bar, 16);
+    gtk_box_pack_start(GTK_BOX(main_box), header_bar, FALSE, FALSE, 0);
+
+    /* Branding */
+    GtkWidget *brand_label = gtk_label_new("▼ Venom");
+    GtkStyleContext *brand_ctx = gtk_widget_get_style_context(brand_label);
+    gtk_style_context_add_class(brand_ctx, "brand-label");
+    gtk_box_pack_start(GTK_BOX(header_bar), brand_label, FALSE, FALSE, 0);
+
+    /* Tab Switcher (Right Aligned) */
+    GtkWidget *tabs_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    gtk_widget_set_halign(tabs_box, GTK_ALIGN_END);
+    gtk_box_pack_end(GTK_BOX(header_bar), tabs_box, FALSE, FALSE, 0);
+    
+    _controls_btn = gtk_button_new_with_label("Controls");
+    _notifs_btn = gtk_button_new_with_label("Notifications");
+    
+    /* Make buttons look like labels/tabs */
+    gtk_style_context_add_class(gtk_widget_get_style_context(_controls_btn), "tab-button");
+    gtk_style_context_add_class(gtk_widget_get_style_context(_notifs_btn), "tab-button");
+    gtk_style_context_add_class(gtk_widget_get_style_context(_controls_btn), "active-tab"); /* Default active */
+    
+    g_signal_connect(_controls_btn, "clicked", G_CALLBACK(on_tab_switch), "controls");
+    g_signal_connect(_notifs_btn, "clicked", G_CALLBACK(on_tab_switch), "notifications");
+    
+    gtk_box_pack_start(GTK_BOX(tabs_box), _controls_btn, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(tabs_box), _notifs_btn, FALSE, FALSE, 0);
+
+    /* --- STACK --- */
+    _stack = gtk_stack_new();
+    gtk_stack_set_transition_type(GTK_STACK(_stack), GTK_STACK_TRANSITION_TYPE_SLIDE_LEFT_RIGHT);
+    gtk_stack_set_transition_duration(GTK_STACK(_stack), 250);
+    gtk_box_pack_start(GTK_BOX(main_box), _stack, TRUE, TRUE, 0);
+    
+    /* Add Pages */
+    gtk_stack_add_named(GTK_STACK(_stack), create_controls_page(), "controls");
+    gtk_stack_add_named(GTK_STACK(_stack), create_notifications_page(), "notifications");
 
     /* CSS Class for styling */
     GtkStyleContext *ctx = gtk_widget_get_style_context(window);
@@ -651,7 +736,7 @@ static void on_wifi_clicked(GtkButton *button, gpointer data)
  * BLUETOOTH POPUP MENU
  * ===================================================================== */
 
-static GtkWidget *_bluetooth_button = NULL;
+
 static gboolean _bt_scanning = FALSE;
 
 /* Bluetooth device menu item callback */
