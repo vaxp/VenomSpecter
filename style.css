@@ -72,18 +72,18 @@ button:active {
 
 #launcher-window {
     /* شفافية كاملة للنافذة الأم */
-    background-color: rgba(0, 0, 0, 0.76); 
+    background-color: rgba(0, 0, 0, 0); 
     border: none;
 }
 
 #launcher-window scrolledwindow,
 #launcher-window scrolledwindow viewport {
-    background-color: rgba(0, 0, 0, 0.76);
+    background-color: rgba(0, 0, 0, 0);
 }
 
 #launcher-window grid {
     /* خلفية شفافة تماماً (أو شبه معدومة إذا أردت ظلاً خفيفاً جداً) */
-    background-color: rgba(0, 0, 0, 0.76); 
+    background-color: rgba(0, 0, 0, 0); 
     
     /* الإبقاء على الحدود فقط ليعرف المستخدم حدود القائمة */
     border: 1px solid rgba(0, 252, 210, 0.3); 
@@ -114,9 +114,9 @@ button:active {
 
 #app-grid-button:hover {
     /* عند الهوفر: خلفية خفيفة جداً لتبرز الأيقونة */
-    background-color: rgba(0, 252, 210, 0.1);
+    background-color: rgba(0, 0, 0, 0);
     border: 1px solid rgb(0, 252, 210);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0);
     -gtk-icon-transform: scale(1.1);
 }
 
@@ -169,7 +169,7 @@ menuitem:hover {
 }
 
 separator {
-    background-color: rgb(60, 60, 70);
+    background-color: rgba(48, 211, 189, 0.671);
     min-height: 1px;
     margin: 2px 0;
 }
