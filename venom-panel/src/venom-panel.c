@@ -14,9 +14,12 @@
 #include "control-center.h"
 #include "search.h"
 #include "sni-client.h"
+#include "shot-client.h"
 
 static GtkWidget *control_center_window = NULL;
+
 static GtkWidget *search_entry = NULL;
+static GtkWidget *rec_stop_button = NULL;
 
 /* =====================================================================
  * 1. SEARCH HANDLER & LAUNCHER FIX
@@ -181,6 +184,29 @@ static void on_menu_item_activate(GtkMenuItem *menuitem, gpointer data) {
     const gchar *tray_id = g_object_get_data(G_OBJECT(menuitem), "tray-id");
     gint mid = atoi(item_id); // Simple atoi since id is int 
     sni_client_menu_click(tray_id, mid);
+}
+
+static void on_rec_state_changed(gboolean is_recording, gpointer user_data) {
+    (void)user_data;
+    g_print("[Panel] Recording state changed: %d\n", is_recording);
+    if (rec_stop_button) {
+        if (is_recording) {
+            g_print("[Panel] Showing stop button\n");
+            gtk_widget_set_no_show_all(rec_stop_button, FALSE); /* clear flag to allow show */
+            gtk_widget_show_all(rec_stop_button);
+            gtk_widget_set_visible(rec_stop_button, TRUE);
+        } else {
+            g_print("[Panel] Hiding stop button\n");
+            gtk_widget_hide(rec_stop_button);
+        }
+    } else {
+        g_print("[Panel] Stop button is NULL!\n");
+    }
+}
+
+static void on_stop_recording_clicked(GtkButton *btn, gpointer data) {
+    (void)btn; (void)data;
+    shot_stop_record();
 }
 
 static void on_tray_button_press(GtkButton *btn, GdkEventButton *event, gpointer data) {
@@ -370,13 +396,46 @@ GtkWidget* create_venom_panel(void) {
     /* Right Widgets */
     GtkWidget *r_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_widget_set_margin_end(r_box, 12);
+
     gtk_box_pack_end(GTK_BOX(hbox), r_box, FALSE, FALSE, 0);
+    
+    /* Recording Stop Button (Hidden by default) */
+    rec_stop_button = gtk_button_new();
+    gtk_button_set_relief(GTK_BUTTON(rec_stop_button), GTK_RELIEF_NONE);
+    gtk_widget_set_tooltip_text(rec_stop_button, "Stop Recording");
+    GtkWidget *rec_icon = gtk_image_new_from_icon_name("media-playback-stop-symbolic", GTK_ICON_SIZE_MENU);
+    gtk_container_add(GTK_CONTAINER(rec_stop_button), rec_icon);
+    
+    /* Style it: maybe red background or red icon? */
+    GtkStyleContext *rec_ctx = gtk_widget_get_style_context(rec_stop_button);
+    gtk_style_context_add_class(rec_ctx, "destructive-action"); /* Assume this class exists or add inline style */
+    
+    /* Apply custom red color just in case */
+    GtkCssProvider *rec_css = gtk_css_provider_new();
+    const char *css_red = "button { color: #ff5555; }"; 
+    gtk_css_provider_load_from_data(rec_css, css_red, -1, NULL);
+    gtk_style_context_add_provider(rec_ctx, GTK_STYLE_PROVIDER(rec_css), 800);
+    
+    g_signal_connect(rec_stop_button, "clicked", G_CALLBACK(on_stop_recording_clicked), NULL);
+    gtk_box_pack_start(GTK_BOX(r_box), rec_stop_button, FALSE, FALSE, 0);
+    /* Ensure it's hidden initially */
+    /* gtk_widget_show_all checks visibility prop, but we will manage it manually */
+    gtk_widget_set_no_show_all(rec_stop_button, TRUE);
+    gtk_widget_hide(rec_stop_button);
+    
+    /* Register callback */
+    shot_client_on_recording_state(on_rec_state_changed, NULL);
     
 
     
     /* Tray Area */
     GtkWidget *tray_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
     gtk_box_pack_start(GTK_BOX(r_box), tray_box, FALSE, FALSE, 0);
+
+
+    
+    /* Register callback */
+    shot_client_on_recording_state(on_rec_state_changed, NULL);
 
     /* SNI Init */
     sni_client_init();

@@ -38,9 +38,26 @@ void shot_client_cleanup(void) {
 
 static void call_void_method(const gchar *method) {
     ensure_proxy();
-    if (!_proxy) return;
-    
+    if (!_proxy) {
+        g_warning("[Shot] Proxy is NULL! Cannot call %s", method);
+        return;
+    }
+    g_print("[Shot] Calling method: %s\n", method);
     g_dbus_proxy_call(_proxy, method, NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
+}
+
+static ShotRecordingStateCallback _rec_cb = NULL;
+static gpointer _rec_data = NULL;
+
+void shot_client_on_recording_state(ShotRecordingStateCallback cb, gpointer user_data) {
+    _rec_cb = cb;
+    _rec_data = user_data;
+}
+
+static void set_recording_state(gboolean state) {
+    if (_rec_cb) {
+        _rec_cb(state, _rec_data);
+    }
 }
 
 void shot_take_full_screenshot(void) {
@@ -53,12 +70,15 @@ void shot_take_region_screenshot(void) {
 
 void shot_start_full_record(void) {
     call_void_method("StartRecord");
+    set_recording_state(TRUE);
 }
 
 void shot_start_region_record(void) {
     call_void_method("SelectRecord");
+    set_recording_state(TRUE);
 }
 
 void shot_stop_record(void) {
     call_void_method("StopRecord");
+    set_recording_state(FALSE);
 }
