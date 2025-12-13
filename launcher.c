@@ -199,15 +199,24 @@ void on_launcher_clicked(GtkWidget *widget, gpointer data) {
     }
     
     launcher_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_decorated(GTK_WINDOW(launcher_window), FALSE);
-    gtk_window_set_type_hint(GTK_WINDOW(launcher_window), GDK_WINDOW_TYPE_HINT_NORMAL);
-    gtk_widget_set_name(launcher_window, "launcher-window");
-    gtk_widget_set_app_paintable(launcher_window, TRUE);
+    
+    /* Set transparency visual BEFORE realize */
     GdkScreen *l_screen = gtk_window_get_screen(GTK_WINDOW(launcher_window));
     GdkVisual *l_visual = gdk_screen_get_rgba_visual(l_screen);
     if (l_visual != NULL && gdk_screen_is_composited(l_screen)) {
         gtk_widget_set_visual(launcher_window, l_visual);
     }
+    
+    /* Enable override redirect (bypass WM) */
+    gtk_widget_realize(launcher_window);
+    gdk_window_set_override_redirect(gtk_widget_get_window(launcher_window), TRUE);
+    
+    gtk_window_set_decorated(GTK_WINDOW(launcher_window), FALSE);
+    gtk_window_set_type_hint(GTK_WINDOW(launcher_window), GDK_WINDOW_TYPE_HINT_NORMAL);
+    gtk_widget_set_name(launcher_window, "launcher-window");
+    gtk_widget_set_app_paintable(launcher_window, TRUE);
+    
+    /* Size and move */
     GdkScreen *screen = gtk_window_get_screen(GTK_WINDOW(launcher_window));
     gint screen_width = gdk_screen_get_width(screen);
     gint screen_height = gdk_screen_get_height(screen);
