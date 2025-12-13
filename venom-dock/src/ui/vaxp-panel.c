@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include "launcher.h"
 #include "pager.h"
+#include "logic/app_manager.h"
 
 /* Global X11 variables */
 Display *xdisplay;
@@ -700,99 +701,95 @@ GdkPixbuf *get_window_icon(Window xwindow) {
 
 
 
+/* Get Active Window Helper */
+static Window get_active_window(void) {
+    Atom type;
+    int format;
+    unsigned long nitems, bytes_after;
+    unsigned char *prop = NULL;
+    Window active = None;
+    if (XGetWindowProperty(xdisplay, root_window, net_active_window_atom, 0, 1024, False,
+        XA_WINDOW, &type, &format, &nitems, &bytes_after, &prop) == Success) {
+        if (prop) {
+            active = *(Window *)prop;
+            XFree(prop);
+        }
+    }
+    return active;
+}
+
 /* Activate window on click - cycles through grouped windows */
 void on_button_clicked(GtkWidget *widget, gpointer data) {
-    (void)data; /* Unused */
+    (void)data; 
     
     WindowGroup *group = (WindowGroup *)g_object_get_data(G_OBJECT(widget), "group");
-    if (group == NULL) {
-        return;
-    }
+    if (group == NULL) return;
     
     int window_count = g_list_length(group->windows);
     
-    /* If no windows, launch the app (for pinned apps) */
+    /* 1. Launch Logic for Pinned Apps */
     if (window_count == 0) {
         if (group->desktop_file_path != NULL) {
-            GDesktopAppInfo *app_info = g_desktop_app_info_new_from_filename(group->desktop_file_path);
-            if (app_info != NULL) {
-                GError *error = NULL;
-                GdkAppLaunchContext *context = gdk_display_get_app_launch_context(gdk_display_get_default());
-                
-                /* Custom Detached Launch Logic for Dock */
-                const gchar *raw_cmd = g_app_info_get_commandline(G_APP_INFO(app_info));
-                if (raw_cmd) {
-                    gchar *cmd_line = g_strdup(raw_cmd);
-                    
-                    /* Simple stripper for common desktop entry field codes */
-                    const char *codes[] = {"%f", "%u", "%F", "%U", "%i", "%c", "%k", NULL};
-                    for (int i = 0; codes[i] != NULL; i++) {
-                        gchar *found;
-                        while ((found = strstr(cmd_line, codes[i])) != NULL) {
-                            found[0] = ' ';
-                            found[1] = ' ';
-                        }
-                    }
-                    
-                    gint argc;
-                    gchar **argv;
-                    if (g_shell_parse_argv(cmd_line, &argc, &argv, &error)) {
-                        /* Reuse child_setup if defined or define a lambda-like local if C allows? No.
-                           We need to define child_setup globally or share it. 
-                           Since I cannot easily see if I added it globally yet, I'll rely on a forward declaration or assumes I added it.
-                           Wait, I need to add child_setup function first. 
-                           I'll add it along with unistd.h in a separate chunk? 
-                           No, I can't add it in the middle easily.
-                           I will assume I will add it at the top or use a local definition if GCC supports it (nested functions are a GNU extension).
-                           Better: I will define it at file scope in a previous chunk.
-                           Wait, I'll use a separate tool call or a multi-chunk.
-                           I will add the helper function at the top of the file in the first chunk.
-                        */
-                         if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, child_setup, NULL, NULL, &error)) {
-                             g_warning("Failed to spawn app detached in dock: %s", error->message);
-                             g_error_free(error);
-                             /* Fallback */
-                             g_app_info_launch(G_APP_INFO(app_info), NULL, G_APP_LAUNCH_CONTEXT(context), NULL);
-                        }
-                        g_strfreev(argv);
-                    }
-                    g_free(cmd_line);
-                } else {
-                     g_app_info_launch(G_APP_INFO(app_info), NULL, G_APP_LAUNCH_CONTEXT(context), &error);
-                }
-                
-                g_object_unref(context);
-                g_object_unref(app_info);
+            GError *error = NULL;
+            if (!app_mgr_launch(group->desktop_file_path, &error)) {
+                g_warning("Failed to launch app: %s", error ? error->message : "Unknown error");
+                if (error) g_error_free(error);
             }
         }
         return;
     }
     
-    /* Cycle to next window */
-    group->active_index = (group->active_index + 1) % window_count;
+    /* 2. Window Management (Minimize/Activate Toggle) */
+    Window active_win = get_active_window();
+    gboolean app_is_active = FALSE;
+    GList *l;
+    for (l = group->windows; l != NULL; l = l->next) {
+        if ((Window)GPOINTER_TO_INT(l->data) == active_win) {
+             app_is_active = TRUE;
+             break;
+        }
+    }
+
+    gdk_x11_display_error_trap_push(gdk_display_get_default());
+
+    if (app_is_active && window_count == 1) {
+        /* Single window active -> Minimize */
+        Window target = (Window)GPOINTER_TO_INT(group->windows->data);
+        XIconifyWindow(xdisplay, target, DefaultScreen(xdisplay));
+    } else {
+        /* Cycle logic for multiple windows or Activate if inactive */
+        
+        /* If app is already active (multi-window), advance index to switch window */
+        if (app_is_active) {
+            group->active_index = (group->active_index + 1) % window_count;
+        }
+        /* If app is inactive, keep current active_index (resume where left off) */
+        
+        GList *window_node = g_list_nth(group->windows, group->active_index);
+        if (window_node == NULL) {
+            group->active_index = 0;
+            window_node = g_list_first(group->windows);
+        }
+        
+        Window win = GPOINTER_TO_INT(window_node->data);
+        
+        /* Activate */
+        XEvent xev;
+        memset(&xev, 0, sizeof(xev));
+        xev.type = ClientMessage;
+        xev.xclient.window = win;
+        xev.xclient.message_type = net_active_window_atom;
+        xev.xclient.format = 32;
+        xev.xclient.data.l[0] = 2; /* Source indication (2 = pager) */
+        xev.xclient.data.l[1] = CurrentTime;
+        xev.xclient.data.l[2] = 0;
     
-    /* Get the window to activate */
-    GList *window_node = g_list_nth(group->windows, group->active_index);
-    if (window_node == NULL) {
-        group->active_index = 0;
-        window_node = g_list_first(group->windows);
+        XSendEvent(xdisplay, root_window, False, SubstructureRedirectMask | SubstructureNotifyMask, &xev);
+        XMapRaised(xdisplay, win); /* Ensure restoration */
     }
     
-    Window win = GPOINTER_TO_INT(window_node->data);
-    
-    /* Send activation event */
-    XEvent xev;
-    memset(&xev, 0, sizeof(xev));
-    xev.type = ClientMessage;
-    xev.xclient.window = win;
-    xev.xclient.message_type = net_active_window_atom;
-    xev.xclient.format = 32;
-    xev.xclient.data.l[0] = 2; /* Source indication (2 = pager) */
-    xev.xclient.data.l[1] = CurrentTime;
-    xev.xclient.data.l[2] = 0;
-
-    XSendEvent(xdisplay, root_window, False, SubstructureRedirectMask | SubstructureNotifyMask, &xev);
     XFlush(xdisplay);
+    gdk_x11_display_error_trap_pop_ignored(gdk_display_get_default());
 }
 
 /* Filter X events to update list */
