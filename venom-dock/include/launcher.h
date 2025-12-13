@@ -7,8 +7,10 @@
 extern GtkWidget *launcher_button;
 extern GtkWidget *launcher_window;
 
-/* Function prototypes */
+/* Public API */
 void create_launcher_button(GtkWidget *box);
+void on_launcher_clicked(GtkWidget *widget, gpointer data);
 void on_launcher_app_clicked(GtkWidget *widget, gpointer data);
+void launcher_start_standalone(void);
 
 #endif /* LAUNCHER_H */

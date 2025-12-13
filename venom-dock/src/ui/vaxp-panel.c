@@ -698,6 +698,8 @@ GdkPixbuf *get_window_icon(Window xwindow) {
     return pixbuf;
 }
 
+
+
 /* Activate window on click - cycles through grouped windows */
 void on_button_clicked(GtkWidget *widget, gpointer data) {
     (void)data; /* Unused */
