@@ -3,6 +3,7 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
 #include <cairo-xlib.h>
+#include <X11/Xutil.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -124,15 +125,55 @@ static gboolean on_pager_draw(GtkWidget *widget, cairo_t *cr, gpointer data) {
                  }
                  
                  if (!drawn) {
-                     /* Fallback: Elegant Placeholder */
-                     cairo_set_source_rgba(cr, 0.2, 0.2, 0.2, 0.8);
+                     /* Fallback: Window Frame with Icon */
+                     cairo_set_source_rgba(cr, 0.25, 0.25, 0.3, 0.9);
                      cairo_rectangle(cr, px, py, pw, ph);
                      cairo_fill(cr);
                      
-                     /* Titlebar hint */
-                     cairo_set_source_rgba(cr, 0.3, 0.3, 0.3, 1.0);
-                     cairo_rectangle(cr, px, py, pw, MAX(ph * 0.15, 4));
-                     cairo_fill(cr);
+                     /* Attempt to load icon from WM_CLASS */
+                     Display *dpy = GDK_DISPLAY_XDISPLAY(gdk_display_get_default());
+                     char *icon_name = NULL;
+                     XClassHint hint = {0};
+                     
+                     if (XGetClassHint(dpy, win, &hint)) {
+                         if (hint.res_class) icon_name = g_strdup(hint.res_class);
+                         else if (hint.res_name) icon_name = g_strdup(hint.res_name);
+                         
+                         if (hint.res_name) XFree(hint.res_name);
+                         if (hint.res_class) XFree(hint.res_class);
+                     }
+                     
+                     if (!icon_name) icon_name = g_strdup("application-x-executable");
+                     
+                     int icon_size = MIN(pw, ph) / 2;
+                     if (icon_size < 16) icon_size = 16;
+                     
+                     GtkIconTheme *theme = gtk_icon_theme_get_default();
+                     GtkIconInfo *info = gtk_icon_theme_lookup_icon(theme, icon_name, icon_size, GTK_ICON_LOOKUP_FORCE_SIZE);
+                     
+                     if (!info) {
+                         /* Try lower case */
+                         char *lower = g_ascii_strdown(icon_name, -1);
+                         info = gtk_icon_theme_lookup_icon(theme, lower, icon_size, GTK_ICON_LOOKUP_FORCE_SIZE);
+                         g_free(lower);
+                     }
+                     
+                     if (info) {
+                         GdkPixbuf *pix = gtk_icon_info_load_icon(info, NULL);
+                         if (pix) {
+                             int iw = gdk_pixbuf_get_width(pix);
+                             int ih = gdk_pixbuf_get_height(pix);
+                             double ix = px + (pw - iw) / 2.0;
+                             double iy = py + (ph - ih) / 2.0;
+                             
+                             gdk_cairo_set_source_pixbuf(cr, pix, ix, iy);
+                             cairo_paint(cr);
+                             g_object_unref(pix);
+                         }
+                         g_object_unref(info);
+                     }
+                     
+                     g_free(icon_name);
                  }
                  
                  /* Border */
