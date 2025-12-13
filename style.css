@@ -103,6 +103,11 @@ button:active {
 #app-grid-button {
     background-color: transparent;
     border: 1px solid transparent;
+    box-shadow: none;
+    outline: none;
+    background-image: none;
+    -gtk-icon-shadow: none;
+    -gtk-icon-effect: none;
 
     /* تصغير الأزرار في القاذف أيضاً لتتناسب مع الدوك */
     padding: 10px;
