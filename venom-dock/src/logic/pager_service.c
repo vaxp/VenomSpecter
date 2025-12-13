@@ -108,6 +108,59 @@ Pixmap pager_svc_get_pixmap(Window win) {
     return pixmap;
 }
 
+static GHashTable *snapshot_cache = NULL;
+
+void pager_svc_clear_cache(void) {
+    if (snapshot_cache) {
+        g_hash_table_destroy(snapshot_cache);
+        snapshot_cache = NULL;
+    }
+}
+
+GdkPixbuf *pager_svc_get_snapshot_pixbuf(Window win, int width, int height) {
+    if (!snapshot_cache) {
+        snapshot_cache = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_object_unref);
+    }
+    
+    /* Check cache first */
+    GdkPixbuf *cached = g_hash_table_lookup(snapshot_cache, GINT_TO_POINTER((gint)win));
+    if (cached) {
+        return g_object_ref(cached);
+    }
+
+    XWindowAttributes attrs;
+    if (!XGetWindowAttributes(x_display, win, &attrs)) return NULL;
+    /* Only fetch viewable windows via CPU to avoid freezes */
+    if (attrs.map_state != IsViewable) return NULL;
+    
+    gdk_x11_display_error_trap_push(gdk_display_get_default());
+    
+    GdkWindow *gdk_win = gdk_x11_window_foreign_new_for_display(gdk_display_get_default(), win);
+    GdkPixbuf *full_size = NULL;
+    
+    if (gdk_win) {
+         full_size = gdk_pixbuf_get_from_window(gdk_win, 0, 0, attrs.width, attrs.height);
+    }
+    
+    gdk_x11_display_error_trap_pop_ignored(gdk_display_get_default());
+
+    if (!full_size) {
+        if (gdk_win) g_object_unref(gdk_win);
+        return NULL;
+    }
+    
+    GdkPixbuf *dest = gdk_pixbuf_scale_simple(full_size, width, height, GDK_INTERP_BILINEAR);
+    g_object_unref(full_size);
+    if (gdk_win) g_object_unref(gdk_win);
+    
+    if (dest) {
+        /* Store in cache */
+        g_hash_table_insert(snapshot_cache, GINT_TO_POINTER((gint)win), g_object_ref(dest));
+    }
+    
+    return dest;
+}
+
 gboolean pager_svc_get_window_geometry(Window win, int *x, int *y, int *width, int *height) {
     XWindowAttributes attrs;
     if (XGetWindowAttributes(x_display, win, &attrs)) {

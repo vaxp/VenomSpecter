@@ -16,6 +16,9 @@ GList *pager_svc_get_windows(int desktop_index);
 
 /* Capture window pixmap (GPU) */
 Pixmap pager_svc_get_pixmap(Window win);
+/* Capture snapshot (CPU Fallback) */
+GdkPixbuf *pager_svc_get_snapshot_pixbuf(Window win, int width, int height);
+void pager_svc_clear_cache(void);
 
 /* Get window geometry */
 gboolean pager_svc_get_window_geometry(Window win, int *x, int *y, int *width, int *height);

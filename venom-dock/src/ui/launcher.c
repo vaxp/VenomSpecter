@@ -167,6 +167,8 @@ void on_launcher_clicked(GtkWidget *widget, gpointer data) {
         return;
     }
     
+    
+    pager_svc_clear_cache();
     launcher_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     
     /* Visual Setup */

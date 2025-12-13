@@ -124,6 +124,24 @@ static gboolean on_pager_draw(GtkWidget *widget, cairo_t *cr, gpointer data) {
                      XFreePixmap(dpy, pm);
                  }
                  
+                 /* Fallback: CPU Snapshot (if GPU failed) */
+                 if (!drawn) {
+                     GdkPixbuf *snap = pager_svc_get_snapshot_pixbuf(win, pw, ph);
+                     if (snap) {
+                         gdk_cairo_set_source_pixbuf(cr, snap, px, py);
+                         cairo_paint(cr);
+                         g_object_unref(snap);
+                         
+                         /* Border */
+                         cairo_set_source_rgba(cr, 0.4, 0.4, 0.4, 0.8);
+                         cairo_set_line_width(cr, 1);
+                         cairo_rectangle(cr, px, py, pw, ph);
+                         cairo_stroke(cr);
+                         
+                         drawn = TRUE;
+                     }
+                 }
+                 
                  if (!drawn) {
                      /* Fallback: Window Frame with Icon */
                      cairo_set_source_rgba(cr, 0.25, 0.25, 0.3, 0.9);
