@@ -5,7 +5,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <gdk/gdkx.h>
+#include <gdk/gdkx.h>
 #include <X11/Xlib.h>
+#include <unistd.h>
 
 /* Global variables */
 GtkWidget *launcher_button = NULL;
@@ -124,6 +126,12 @@ void on_search_changed(GtkSearchEntry *entry, gpointer data) {
     perform_search(text, app_stack, search_results_view, launcher_window);
 }
 
+/* Helper for child setup to detach process */
+static void child_setup(gpointer user_data) {
+    (void)user_data;
+    setsid();
+}
+
 /* Launcher app clicked - launch application */
 void on_launcher_app_clicked(GtkWidget *widget, gpointer data) {
     const gchar *type = (const gchar *)data;
@@ -135,10 +143,50 @@ void on_launcher_app_clicked(GtkWidget *widget, gpointer data) {
             if (app_info != NULL) {
                 GError *error = NULL;
                 GdkAppLaunchContext *context = gdk_display_get_app_launch_context(gdk_display_get_default());
-                if (!g_app_info_launch(G_APP_INFO(app_info), NULL, G_APP_LAUNCH_CONTEXT(context), &error)) {
-                    g_warning("Failed to launch app: %s", error->message);
-                    g_error_free(error);
+                
+                /* Custom Detached Launch Logic */
+                /* We use g_spawn_async with setsid() to ensure the app is fully detached from the panel's process group */
+                const gchar *raw_cmd = g_app_info_get_commandline(G_APP_INFO(app_info));
+                if (raw_cmd) {
+                    /* Create a mutable copy to strip field codes */
+                    gchar *cmd_line = g_strdup(raw_cmd);
+                    
+                    /* Simple stripper for common desktop entry field codes %f, %u, etc. */
+                    /* We replace them with spaces to handle quoting safely enough for simple cases */
+                    const char *codes[] = {"%f", "%u", "%F", "%U", "%i", "%c", "%k", NULL};
+                    for (int i = 0; codes[i] != NULL; i++) {
+                        gchar *found;
+                        while ((found = strstr(cmd_line, codes[i])) != NULL) {
+                            found[0] = ' ';
+                            found[1] = ' ';
+                        }
+                    }
+                    
+                    gint argc;
+                    gchar **argv;
+                    if (g_shell_parse_argv(cmd_line, &argc, &argv, &error)) {
+                        /* Child setup function to detach session */
+                        if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, child_setup, NULL, NULL, &error)) {
+                             g_warning("Failed to spawn app detached: %s", error->message);
+                             g_error_free(error);
+                             /* Fallback to standard launch if detached fails */
+                             g_app_info_launch(G_APP_INFO(app_info), NULL, G_APP_LAUNCH_CONTEXT(context), NULL);
+                        }
+                        g_strfreev(argv);
+                    } else {
+                        g_warning("Failed to parse command line: %s", error->message);
+                        g_error_free(error);
+                    }
+                    g_free(cmd_line);
+                } else {
+                     /* Fallback for safety */
+                     g_app_info_launch(G_APP_INFO(app_info), NULL, G_APP_LAUNCH_CONTEXT(context), &error);
+                     if (error) {
+                         g_warning("Fallback launch failed: %s", error->message);
+                         g_error_free(error);
+                     }
                 }
+                
                 g_object_unref(context);
                 g_object_unref(app_info);
             }

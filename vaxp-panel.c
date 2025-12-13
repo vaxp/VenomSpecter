@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "launcher.h"
 
 /* Global X11 variables */
@@ -73,6 +74,11 @@ static void on_dock_realize(GtkWidget *widget, gpointer data) {
 
 /* Function prototypes */
 static void on_dock_realize(GtkWidget *widget, gpointer data);
+/* Helper for process detachment */
+static void child_setup(gpointer user_data) {
+    (void)user_data;
+    setsid();
+}
 void update_window_list();
 GdkPixbuf *get_window_icon(Window xwindow);
 char *get_window_name(Window xwindow);
@@ -91,6 +97,9 @@ void save_pinned_apps();
 GdkFilterReturn event_filter(GdkXEvent *xevent, GdkEvent *event, gpointer data);
 
 int main(int argc, char *argv[]) {
+    /* Suppress accessibility bus warning */
+    g_setenv("GTK_A11Y", "none", TRUE);
+
     gtk_init(&argc, &argv);
 
     /* Initialize X11 */
@@ -707,9 +716,46 @@ void on_button_clicked(GtkWidget *widget, gpointer data) {
                 GError *error = NULL;
                 GdkAppLaunchContext *context = gdk_display_get_app_launch_context(gdk_display_get_default());
                 
-                if (!g_app_info_launch(G_APP_INFO(app_info), NULL, G_APP_LAUNCH_CONTEXT(context), &error)) {
-                    g_warning("Failed to launch app: %s", error->message);
-                    g_error_free(error);
+                /* Custom Detached Launch Logic for Dock */
+                const gchar *raw_cmd = g_app_info_get_commandline(G_APP_INFO(app_info));
+                if (raw_cmd) {
+                    gchar *cmd_line = g_strdup(raw_cmd);
+                    
+                    /* Simple stripper for common desktop entry field codes */
+                    const char *codes[] = {"%f", "%u", "%F", "%U", "%i", "%c", "%k", NULL};
+                    for (int i = 0; codes[i] != NULL; i++) {
+                        gchar *found;
+                        while ((found = strstr(cmd_line, codes[i])) != NULL) {
+                            found[0] = ' ';
+                            found[1] = ' ';
+                        }
+                    }
+                    
+                    gint argc;
+                    gchar **argv;
+                    if (g_shell_parse_argv(cmd_line, &argc, &argv, &error)) {
+                        /* Reuse child_setup if defined or define a lambda-like local if C allows? No.
+                           We need to define child_setup globally or share it. 
+                           Since I cannot easily see if I added it globally yet, I'll rely on a forward declaration or assumes I added it.
+                           Wait, I need to add child_setup function first. 
+                           I'll add it along with unistd.h in a separate chunk? 
+                           No, I can't add it in the middle easily.
+                           I will assume I will add it at the top or use a local definition if GCC supports it (nested functions are a GNU extension).
+                           Better: I will define it at file scope in a previous chunk.
+                           Wait, I'll use a separate tool call or a multi-chunk.
+                           I will add the helper function at the top of the file in the first chunk.
+                        */
+                         if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, child_setup, NULL, NULL, &error)) {
+                             g_warning("Failed to spawn app detached in dock: %s", error->message);
+                             g_error_free(error);
+                             /* Fallback */
+                             g_app_info_launch(G_APP_INFO(app_info), NULL, G_APP_LAUNCH_CONTEXT(context), NULL);
+                        }
+                        g_strfreev(argv);
+                    }
+                    g_free(cmd_line);
+                } else {
+                     g_app_info_launch(G_APP_INFO(app_info), NULL, G_APP_LAUNCH_CONTEXT(context), &error);
                 }
                 
                 g_object_unref(context);
