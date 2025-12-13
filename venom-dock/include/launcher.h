@@ -12,5 +12,6 @@ void create_launcher_button(GtkWidget *box);
 void on_launcher_clicked(GtkWidget *widget, gpointer data);
 void on_launcher_app_clicked(GtkWidget *widget, gpointer data);
 void launcher_start_standalone(void);
+void launcher_toggle_visibility(void);
 
 #endif /* LAUNCHER_H */

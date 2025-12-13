@@ -1,9 +1,69 @@
 #include <gtk/gtk.h>
+#include <gio/gio.h>
 #include "launcher.h"
 
-int main(int argc, char *argv[]) {
-    /* Initialize GTK */
-    gtk_init(&argc, &argv);
+static void
+on_method_call(GDBusConnection *connection,
+               const gchar *sender,
+               const gchar *object_path,
+               const gchar *interface_name,
+               const gchar *method_name,
+               GVariant *parameters,
+               GDBusMethodInvocation *invocation,
+               gpointer user_data)
+{
+    (void)connection; (void)sender; (void)object_path; (void)interface_name; (void)parameters; (void)user_data;
+
+    if (g_strcmp0(method_name, "Toggle") == 0) {
+        launcher_toggle_visibility();
+        g_dbus_method_invocation_return_value(invocation, NULL);
+    }
+}
+
+static const GDBusInterfaceVTable interface_vtable = {
+    on_method_call,
+    NULL,
+    NULL
+};
+
+static const gchar introspection_xml[] =
+    "<node>"
+    "  <interface name='org.venomspecter.Launcher'>"
+    "    <method name='Toggle'/>"
+    "  </interface>"
+    "</node>";
+
+static void
+on_bus_acquired(GDBusConnection *connection,
+                const gchar *name,
+                gpointer user_data)
+{
+    (void)name; (void)user_data;
+    GError *error = NULL;
+    GDBusNodeInfo *node_info = g_dbus_node_info_new_for_xml(introspection_xml, NULL);
+
+    g_dbus_connection_register_object(connection,
+                                      "/org/venomspecter/Launcher",
+                                      node_info->interfaces[0],
+                                      &interface_vtable,
+                                      NULL,
+                                      NULL,
+                                      &error);
+
+    if (error) {
+        g_warning("Failed to register object: %s", error->message);
+        g_error_free(error);
+    }
+    g_dbus_node_info_unref(node_info);
+}
+
+static void
+on_name_acquired(GDBusConnection *connection,
+                 const gchar *name,
+                 gpointer user_data)
+{
+    (void)connection; (void)name; (void)user_data;
+    /* We own the name, so we are the primary instance. Start GTK. */
     
     /* Load CSS */
     GtkCssProvider *provider = gtk_css_provider_new();
@@ -21,11 +81,75 @@ int main(int argc, char *argv[]) {
     }
     g_object_unref(provider);
 
-    /* Start Launcher in Standalone Mode */
+    /* Initialize Launcher Logic */
     launcher_start_standalone();
+}
 
-    /* Main Loop */
+static void
+on_name_lost(GDBusConnection *connection,
+             const gchar *name,
+             gpointer user_data)
+{
+    (void)connection; (void)name; (void)user_data;
+    g_print("Debug: Name lost '%s'. Is another instance running?\n", name);
+    /* If we lose the name, we might as well exit or just stay idle? 
+       Usually means another instance took over or we failed to acquire. */
+    // gtk_main_quit(); 
+}
+
+int main(int argc, char *argv[]) {
+    gtk_init(&argc, &argv);
+
+    g_print("Debug: Starting venom-launcher...\n");
+
+    /* Try to call Toggle on existing instance first */
+    GError *error = NULL;
+    GDBusConnection *conn = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, &error);
+    if (!conn) {
+        g_error("Debug: Failed to connect to bus: %s", error->message);
+        return 1;
+    }
+
+    g_print("Debug: Checking for existing instance...\n");
+    /* Check if name has owner by trying to call Toggle */
+    GVariant *result = g_dbus_connection_call_sync(conn,
+                                                   "org.venomspecter.Launcher",
+                                                   "/org/venomspecter/Launcher",
+                                                   "org.venomspecter.Launcher",
+                                                   "Toggle",
+                                                   NULL,
+                                                   NULL,
+                                                   G_DBUS_CALL_FLAGS_NONE,
+                                                   -1,
+                                                   NULL,
+                                                   &error);
+
+    if (result) {
+        g_print("Debug: Existing instance toggled. Exiting.\n");
+        /* Success! Launcher toggled. Exit. */
+        g_variant_unref(result);
+        return 0;
+    }
+    
+    if (error) {
+        g_print("Debug: No existing instance (Error: %s). Assuming role of Server.\n", error->message);
+        g_clear_error(&error); 
+    }
+
+    /* We failed to call Toggle, so assume we are the first instance. Become the Server. */
+    guint owner_id = g_bus_own_name(G_BUS_TYPE_SESSION,
+                                    "org.venomspecter.Launcher",
+                                    G_BUS_NAME_OWNER_FLAGS_NONE,
+                                    on_bus_acquired,
+                                    on_name_acquired,
+                                    on_name_lost,
+                                    NULL,
+                                    NULL);
+
+    g_print("Debug: Entering GTK Main Loop...\n");
     gtk_main();
-
+    
+    g_bus_unown_name(owner_id);
+    g_print("Debug: Exited GTK Main Loop.\n");
     return 0;
 }

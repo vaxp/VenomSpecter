@@ -26,7 +26,12 @@ void on_launcher_app_clicked(GtkWidget *widget, gpointer data);
 /* Standalone Entry */
 void launcher_start_standalone(void) {
     is_standalone = TRUE;
-    /* Simulate click to open window */
+    /* Simulate click to open window initially ONLY if not toggled via DBus (handled in main) 
+       Actually, standard behavior is startup = show. */
+    on_launcher_clicked(NULL, NULL);
+}
+
+void launcher_toggle_visibility(void) {
     on_launcher_clicked(NULL, NULL);
 }
 void populate_applications_grid(GtkWidget *stack);
@@ -104,7 +109,8 @@ void on_launcher_app_clicked(GtkWidget *widget, gpointer data) {
                 search_results_view = NULL;
                 next_button = NULL;
             }
-            if (is_standalone) gtk_main_quit();
+            /* Keep running for DBus */
+            // if (is_standalone) gtk_main_quit();
         }
     }
 }
@@ -308,7 +314,8 @@ gboolean on_launcher_delete_event(GtkWidget *widget, GdkEvent *event, gpointer d
         prev_button = NULL;
         next_button = NULL;
     }
-    if (is_standalone) gtk_main_quit();
+    /* Do NOT quit main loop in standalone mode, just hide/destroy window to wait for next DBus signal */
+    // if (is_standalone) gtk_main_quit(); 
     return TRUE;
 }
 
@@ -321,8 +328,11 @@ gboolean on_launcher_key_press(GtkWidget *window, GdkEventKey *event, gpointer d
             app_stack = NULL;
             search_entry = NULL;
             search_results_view = NULL;
+            prev_button = NULL;
+            next_button = NULL;
         }
-        if (is_standalone) gtk_main_quit();
+        /* Do NOT quit main loop */
+        // if (is_standalone) gtk_main_quit();
         return TRUE;
     }
     return FALSE;
