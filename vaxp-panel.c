@@ -377,16 +377,35 @@ void update_window_list() {
                     gtk_widget_set_tooltip_text(button, group->wm_class);
                 }
                 
-                /* Add icon to button */
+                /* Create Overlay to isolate dot from layout flow */
+                GtkWidget *overlay = gtk_overlay_new();
+                
+                /* Icon as main child (centered) */
                 if (group->icon) {
                     GdkPixbuf *scaled = gdk_pixbuf_scale_simple(group->icon, 24, 24, GDK_INTERP_BILINEAR);
                     GtkWidget *image = gtk_image_new_from_pixbuf(scaled);
-                    gtk_container_add(GTK_CONTAINER(button), image);
+                    gtk_widget_set_valign(image, GTK_ALIGN_CENTER);
+                    gtk_widget_set_halign(image, GTK_ALIGN_CENTER);
+                    gtk_container_add(GTK_CONTAINER(overlay), image);
                     g_object_unref(scaled);
                 } else {
                     GtkWidget *label = gtk_label_new("?");
-                    gtk_container_add(GTK_CONTAINER(button), label);
+                    gtk_widget_set_valign(label, GTK_ALIGN_CENTER);
+                    gtk_widget_set_halign(label, GTK_ALIGN_CENTER);
+                    gtk_container_add(GTK_CONTAINER(overlay), label);
                 }
+                
+                /* Indicator Dot as Overlay Child (Bottom) */
+                GtkWidget *dot = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+                gtk_widget_set_name(dot, "indicator-dot");
+                gtk_widget_set_size_request(dot, 6, 6);
+                gtk_widget_set_halign(dot, GTK_ALIGN_CENTER);
+                gtk_widget_set_valign(dot, GTK_ALIGN_END);
+                gtk_widget_set_margin_bottom(dot, 2); /* Slight offset from very bottom */
+                
+                gtk_overlay_add_overlay(GTK_OVERLAY(overlay), dot);
+                
+                gtk_container_add(GTK_CONTAINER(button), overlay);
                 
                 /* Store group pointer in button */
                 g_object_set_data(G_OBJECT(button), "group", group);
