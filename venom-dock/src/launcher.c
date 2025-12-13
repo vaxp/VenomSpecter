@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "pager.h"
 #include <gdk/gdkx.h>
 #include <gdk/gdkx.h>
 #include <X11/Xlib.h>
@@ -117,6 +118,15 @@ void on_search_activate(GtkEntry *entry, gpointer data) {
         GtkWidget *first_btn = GTK_WIDGET(children->data);
         gtk_widget_activate(first_btn);
         g_list_free(children);
+    }
+}
+
+/* Callback from Pager to close launcher */
+static void on_pager_element_clicked(int desktop_idx, gpointer user_data) {
+    (void)desktop_idx;
+    (void)user_data;
+    if (launcher_window) {
+        gtk_widget_hide(launcher_window);
     }
 }
 
@@ -282,7 +292,31 @@ void on_launcher_clicked(GtkWidget *widget, gpointer data) {
     gtk_widget_set_halign(search_entry, GTK_ALIGN_CENTER);
     g_signal_connect(search_entry, "search-changed", G_CALLBACK(on_search_changed), NULL);
     g_signal_connect(search_entry, "activate", G_CALLBACK(on_search_activate), NULL);
+    g_signal_connect(search_entry, "activate", G_CALLBACK(on_search_activate), NULL);
     gtk_box_pack_start(GTK_BOX(root_box), search_entry, FALSE, FALSE, 0);
+
+    /* Insert Workspace Pager here (between search and app grid) */
+    /* Ensure initialized */
+    {
+        GdkScreen *s = gtk_window_get_screen(GTK_WINDOW(launcher_window));
+        GdkDisplay *d = gdk_screen_get_display(s);
+        /* We access X11 objects carefully */
+        Display *dpy = GDK_DISPLAY_XDISPLAY(d);
+        Window root = GDK_WINDOW_XID(gdk_screen_get_root_window(s));
+        pager_init(dpy, root);
+        
+        GtkWidget *pager = pager_create_widget();
+        gtk_widget_set_halign(pager, GTK_ALIGN_CENTER);
+        gtk_widget_set_margin_top(pager, 10);
+        gtk_widget_set_margin_bottom(pager, 10);
+        
+        /* Register callback to close launcher on click */
+        pager_set_click_callback(on_pager_element_clicked, NULL);
+        
+        gtk_box_pack_start(GTK_BOX(root_box), pager, FALSE, FALSE, 0);
+        /* Force an update manually after show to ensure content */
+        pager_update();
+    }
     
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 20);
     gtk_widget_set_halign(main_box, GTK_ALIGN_CENTER);

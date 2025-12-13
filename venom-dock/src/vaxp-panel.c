@@ -8,6 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "launcher.h"
+#include "pager.h"
 
 /* Global X11 variables */
 Display *xdisplay;
@@ -800,6 +801,12 @@ GdkFilterReturn event_filter(GdkXEvent *xevent, GdkEvent *event, gpointer data) 
     if (xev->type == PropertyNotify) {
         if (xev->xproperty.atom == net_client_list_atom) {
             update_window_list();
+            pager_update(); /* Windows changed, update previews potentially */
+        }
+        else if (xev->xproperty.atom == net_active_window_atom ||
+                 xev->xproperty.atom == XInternAtom(xdisplay, "_NET_CURRENT_DESKTOP", False)) {
+             /* Also update on active window or desktop switch */
+             pager_update();
         }
     }
 
