@@ -12,125 +12,21 @@
 #include "clock-widget.h"
 #include "system-icons.h"
 #include "control-center.h"
-#include "search.h"
+
 #include "sni-client.h"
 #include "shot-client.h"
 #include "power-client.h"
 
 static GtkWidget *control_center_window = NULL;
 
-static GtkWidget *search_entry = NULL;
+
 
 static GtkWidget *rec_stop_button = NULL;
 static GtkWidget *power_profile_btn = NULL;
 static GtkWidget *power_profile_label = NULL;
 static GtkWidget *power_actions_box = NULL;
 
-/* =====================================================================
- * 1. SEARCH HANDLER & LAUNCHER FIX
- * ===================================================================== */
 
-/* ✅ Wrapper for web search - prevents closing the main panel */
-static void on_web_search_wrapper(const gchar *term, const gchar *engine) {
-    gchar *url = NULL;
-    if (g_strcmp0(engine, "github") == 0) {
-        url = g_strdup_printf("https://github.com/search?q=%s", term);
-    } else if (g_strcmp0(engine, "youtube") == 0) {
-        url = g_strdup_printf("https://www.youtube.com/results?search_query=%s", term);
-    } else {
-        url = g_strdup_printf("https://www.google.com/search?q=%s", term);
-    }
-    
-    if (url) {
-        g_app_info_launch_default_for_uri(url, NULL, NULL);
-        g_free(url);
-    }
-}
-
-/* ✅ Fix for Linker Error: Definition of on_launcher_app_clicked */
-void on_launcher_app_clicked(GtkWidget *widget, gpointer data) {
-    const gchar *type = (const gchar *)data;
-    
-    /* Case 1: Direct .desktop file path */
-    if (g_str_has_suffix(type, ".desktop")) {
-        GDesktopAppInfo *app_info = g_desktop_app_info_new_from_filename(type);
-        if (app_info) {
-            g_app_info_launch(G_APP_INFO(app_info), NULL, NULL, NULL);
-            g_object_unref(app_info);
-        }
-        return;
-    }
-
-    /* Case 2: Data attached to widget */
-    const gchar *desktop_file = g_object_get_data(G_OBJECT(widget), "desktop-file");
-    if (desktop_file != NULL) {
-        GDesktopAppInfo *app_info = g_desktop_app_info_new_from_filename(desktop_file);
-        if (app_info != NULL) {
-            g_app_info_launch(G_APP_INFO(app_info), NULL, NULL, NULL);
-            g_object_unref(app_info);
-        }
-    }
-}
-
-static void on_search_activate(GtkEntry *entry, gpointer data) {
-    const gchar *text = gtk_entry_get_text(entry);
-    if (!text || strlen(text) == 0) return;
-    
-    GtkWidget *window = gtk_widget_get_toplevel(GTK_WIDGET(entry));
-    
-    if (g_str_has_prefix(text, "vater:")) {
-        execute_vater(text + 6, window);
-        gtk_entry_set_text(entry, "");
-        return;
-    }
-    if (g_str_has_prefix(text, "!:")) {
-        execute_math(text + 2, window);
-        gtk_entry_set_text(entry, "");
-        return;
-    }
-    if (g_str_has_prefix(text, "vafile:")) {
-        execute_file_search(text + 7, window);
-        gtk_entry_set_text(entry, "");
-        return;
-    }
-    if (g_str_has_prefix(text, "g:")) {
-        on_web_search_wrapper(text + 2, "github");
-        gtk_entry_set_text(entry, "");
-        return;
-    }
-    if (g_str_has_prefix(text, "s:")) {
-        on_web_search_wrapper(text + 2, "google");
-        gtk_entry_set_text(entry, "");
-        return;
-    }
-    if (g_str_has_prefix(text, "y:")) {
-        on_web_search_wrapper(text + 2, "youtube");
-        gtk_entry_set_text(entry, "");
-        return;
-    }
-    if (g_str_has_prefix(text, "ai:")) {
-        execute_ai_chat(text + 3, window);
-        gtk_entry_set_text(entry, "");
-        return;
-    }
-    
-    /* Default: Execute command */
-    g_spawn_command_line_async(text, NULL);
-    gtk_entry_set_text(entry, "");
-}
-
-/* =====================================================================
- * 3. FOCUS FIX LOGIC (CRITICAL FOR DOCK)
- * ===================================================================== */
-
-/* ✅ هذه الدالة تجبر النظام على إعطاء الكيبورد للبنل عند النقر */
-static gboolean force_panel_focus(GtkWidget *widget, GdkEventButton *event, gpointer data) {
-    GtkWindow *window = GTK_WINDOW(data);
-    if (event->type == GDK_BUTTON_PRESS) {
-        gtk_window_present_with_time(window, event->time);
-    }
-    return FALSE; /* Continue processing the click (so text cursor moves) */
-}
 
 /* =====================================================================
  * 4. PANEL SETUP
@@ -445,27 +341,7 @@ GtkWidget* create_venom_panel(void) {
     gtk_widget_set_hexpand(l_sp, TRUE);
     gtk_box_pack_start(GTK_BOX(hbox), l_sp, TRUE, TRUE, 0);
     
-    /* --- SEARCH BAR --- */
-    search_entry = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(search_entry), "Admiral: (vater:, !:, s:, g:, y:)");
-    gtk_widget_set_size_request(search_entry, 350, 24);
-    gtk_widget_set_valign(search_entry, GTK_ALIGN_CENTER);
-    
-    /* ✅ ربط دالة خطف التركيز هنا */
-    g_signal_connect(search_entry, "button-press-event", G_CALLBACK(force_panel_focus), window);
-    
-    /* Load Search CSS */
-    GtkCssProvider *s_css = gtk_css_provider_new();
-    /* Fix backdrop dimming in CSS */
-    const char *search_css = 
-        "entry { background: rgba(255,255,255,0.1); color: white; border-radius: 6px; border: none; }"
-        "entry:focus { background: rgba(255,255,255,0.15); }"
-        "entry:backdrop { background: rgba(255,255,255,0.1); color: white; }";
-    gtk_css_provider_load_from_data(s_css, search_css, -1, NULL);
-    gtk_style_context_add_provider(gtk_widget_get_style_context(search_entry), GTK_STYLE_PROVIDER(s_css), 800);
-    
-    g_signal_connect(search_entry, "activate", G_CALLBACK(on_search_activate), NULL);
-    gtk_box_pack_start(GTK_BOX(hbox), search_entry, FALSE, FALSE, 0);
+
     
     /* Right Spacer */
     GtkWidget *r_sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);

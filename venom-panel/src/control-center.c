@@ -27,7 +27,7 @@
 #include "brightness-manager.h"
 #include "network-client.h"
 #include "shot-client.h"
-#include "shot-client.h"
+#include "audio-client.h"
 
 // #include "control-center.h" /* Uncomment if you have this header */
 
@@ -171,30 +171,12 @@ static void set_brightness_percent(int percent)
  */
 static void set_volume_percent(int percent)
 {
-    char command[128];
-    /* Using pactl is lighter and safer for the UI thread than raw PA API blocking calls */
-    snprintf(command, sizeof(command), "pactl set-sink-volume @DEFAULT_SINK@ %d%%", percent);
-    
-    GError *error = NULL;
-    if (!g_spawn_command_line_async(command, &error)) {
-        g_warning("Failed to set volume: %s", error->message);
-        g_error_free(error);
-    }
+    audio_set_volume(percent);
 }
 
 static int get_volume_percent(void)
 {
-    /* Using popen allows reading the output easily */
-    FILE *fp = popen("pactl get-sink-volume @DEFAULT_SINK@ | grep -oP '\\d+%' | head -1 | tr -d '%'", "r");
-    if (!fp) return 0;
-    
-    char buf[16];
-    int vol = 0;
-    if (fgets(buf, sizeof(buf), fp)) {
-        vol = atoi(buf);
-    }
-    pclose(fp);
-    return vol;
+    return audio_get_volume();
 }
 
 
@@ -285,13 +267,20 @@ static GtkWidget *create_slider_section(const char *icon_name,
     GtkWidget *icon = gtk_image_new_from_icon_name(icon_name, GTK_ICON_SIZE_BUTTON);
     gtk_box_pack_start(GTK_BOX(box), icon, FALSE, FALSE, 0);
 
-    GtkWidget *scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 100, 1);
+    GtkWidget *scale = NULL;
     
-    /* Set initial values */
     if (g_strcmp0(title, "volume") == 0) {
+        int max_vol = audio_get_max_volume();
+        scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, max_vol, 1);
         int cur = get_volume_percent();
         gtk_range_set_value(GTK_RANGE(scale), cur);
+        
+        /* Mark over-amplified part? */
+        if (max_vol > 100) {
+            gtk_scale_add_mark(GTK_SCALE(scale), 100, GTK_POS_BOTTOM, NULL);
+        }
     } else {
+        scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 100, 1);
         int cur = get_brightness_percent();
         gtk_range_set_value(GTK_RANGE(scale), cur);
     }
@@ -486,7 +475,9 @@ GtkWidget *create_control_center(void)
     brightness_manager_init();
     network_client_init();
     notification_client_init();
+    notification_client_init();
     shot_client_init();
+    audio_client_init();
     notification_client_on_history_update(on_history_updated, NULL);
     
     _dbus_initialized = TRUE;
@@ -568,7 +559,9 @@ GtkWidget *create_control_center(void)
     g_signal_connect_swapped(window, "destroy", G_CALLBACK(brightness_manager_cleanup), NULL);
     g_signal_connect_swapped(window, "destroy", G_CALLBACK(notification_client_cleanup), NULL);
     g_signal_connect_swapped(window, "destroy", G_CALLBACK(network_client_cleanup), NULL);
+    g_signal_connect_swapped(window, "destroy", G_CALLBACK(network_client_cleanup), NULL);
     g_signal_connect_swapped(window, "destroy", G_CALLBACK(shot_client_cleanup), NULL);
+    g_signal_connect_swapped(window, "destroy", G_CALLBACK(audio_client_cleanup), NULL);
     
     /* Register for DND updates */
     notification_client_on_dnd_change(on_dnd_changed, NULL);
