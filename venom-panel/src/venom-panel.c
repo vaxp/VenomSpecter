@@ -224,15 +224,36 @@ static void on_power_profile_changed(const gchar *profile, gpointer user_data) {
     
     gtk_label_set_text(GTK_LABEL(power_profile_label), profile);
     
-    /* Update Icon based on profile */
+    /* Update Icon and Color */
     GtkWidget *img = gtk_bin_get_child(GTK_BIN(power_profile_btn));
-    if (img) {
-        const gchar *icon_name = "power-profile-balanced-symbolic";
-        if (g_strcmp0(profile, "performance") == 0) icon_name = "power-profile-performance-symbolic";
-        else if (g_strcmp0(profile, "power-saver") == 0) icon_name = "power-profile-power-saver-symbolic";
-        
-        gtk_image_set_from_icon_name(GTK_IMAGE(img), icon_name, GTK_ICON_SIZE_MENU);
+    GtkStyleContext *ctx = gtk_widget_get_style_context(power_profile_btn);
+    GtkCssProvider *css = g_object_get_data(G_OBJECT(power_profile_btn), "profile-css");
+    
+    if (!css) {
+        css = gtk_css_provider_new();
+        g_object_set_data_full(G_OBJECT(power_profile_btn), "profile-css", css, g_object_unref);
+        gtk_style_context_add_provider(ctx, GTK_STYLE_PROVIDER(css), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
     }
+    
+    const char *color = "#ffffff"; /* default */
+    const gchar *icon_name = "power-profile-balanced-symbolic";
+    
+    if (g_strcmp0(profile, "performance") == 0) {
+        icon_name = "power-profile-performance-symbolic";
+        color = "#ff5555"; /* Red */
+    } else if (g_strcmp0(profile, "power-saver") == 0) {
+        icon_name = "power-profile-power-saver-symbolic";
+        color = "#50fa7b"; /* Green */
+    } else {
+        /* balanced */
+        color = "#8be9fd"; /* Cyan/Blue */
+    }
+    
+    if (img) gtk_image_set_from_icon_name(GTK_IMAGE(img), icon_name, GTK_ICON_SIZE_MENU);
+    
+    gchar *css_data = g_strdup_printf("button { color: %s; }", color);
+    gtk_css_provider_load_from_data(css, css_data, -1, NULL);
+    g_free(css_data);
 }
 
 static void on_power_profile_clicked(GtkButton *btn, gpointer data) {
