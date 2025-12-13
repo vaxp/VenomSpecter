@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <gdk/gdkx.h>
+#include <X11/Xlib.h>
 
 /* Global variables */
 GtkWidget *launcher_button = NULL;
@@ -289,6 +291,17 @@ void on_launcher_clicked(GtkWidget *widget, gpointer data) {
     /* Force focus on search entry */
     gtk_widget_grab_focus(search_entry);
     gtk_window_set_focus(GTK_WINDOW(launcher_window), search_entry);
+    
+    /* Manually grab X11 focus and keyboard (Required for override_redirect) */
+    GdkWindow *gdk_win = gtk_widget_get_window(launcher_window);
+    if (gdk_win) {
+        Display *xdisplay = GDK_DISPLAY_XDISPLAY(gdk_display_get_default());
+        Window xwin = GDK_WINDOW_XID(gdk_win);
+        
+        XSetInputFocus(xdisplay, xwin, RevertToParent, CurrentTime);
+        XGrabKeyboard(xdisplay, xwin, True, GrabModeAsync, GrabModeAsync, CurrentTime);
+        XFlush(xdisplay);
+    }
 }
 
 void create_launcher_button(GtkWidget *box) {
