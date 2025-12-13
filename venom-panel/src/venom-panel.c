@@ -15,11 +15,16 @@
 #include "search.h"
 #include "sni-client.h"
 #include "shot-client.h"
+#include "power-client.h"
 
 static GtkWidget *control_center_window = NULL;
 
 static GtkWidget *search_entry = NULL;
+
 static GtkWidget *rec_stop_button = NULL;
+static GtkWidget *power_profile_btn = NULL;
+static GtkWidget *power_profile_label = NULL;
+static GtkWidget *power_actions_box = NULL;
 
 /* =====================================================================
  * 1. SEARCH HANDLER & LAUNCHER FIX
@@ -208,6 +213,59 @@ static void on_stop_recording_clicked(GtkButton *btn, gpointer data) {
     (void)btn; (void)data;
     shot_stop_record();
 }
+
+/* =====================================================================
+ * POWER MANAGEMENT UI
+ * ===================================================================== */
+
+static void on_power_profile_changed(const gchar *profile, gpointer user_data) {
+    (void)user_data;
+    if (!profile || !power_profile_label) return;
+    
+    gtk_label_set_text(GTK_LABEL(power_profile_label), profile);
+    
+    /* Update Icon based on profile */
+    GtkWidget *img = gtk_bin_get_child(GTK_BIN(power_profile_btn));
+    if (img) {
+        const gchar *icon_name = "power-profile-balanced-symbolic";
+        if (g_strcmp0(profile, "performance") == 0) icon_name = "power-profile-performance-symbolic";
+        else if (g_strcmp0(profile, "power-saver") == 0) icon_name = "power-profile-power-saver-symbolic";
+        
+        gtk_image_set_from_icon_name(GTK_IMAGE(img), icon_name, GTK_ICON_SIZE_MENU);
+    }
+}
+
+static void on_power_profile_clicked(GtkButton *btn, gpointer data) {
+    (void)btn; (void)data;
+    const gchar *current = gtk_label_get_text(GTK_LABEL(power_profile_label));
+    
+    if (g_strcmp0(current, "balanced") == 0) power_set_active_profile("performance");
+    else if (g_strcmp0(current, "performance") == 0) power_set_active_profile("power-saver");
+    else power_set_active_profile("balanced");
+}
+
+static void on_power_action_toggle(GtkButton *btn, gpointer data) {
+    (void)btn; (void)data;
+    g_print("[Panel] Power action toggle clicked\n");
+    if (power_actions_box) {
+        if (gtk_widget_get_visible(power_actions_box)) {
+            g_print("[Panel] Hiding actions box\n");
+            gtk_widget_hide(power_actions_box);
+        } else {
+            g_print("[Panel] Showing actions box\n");
+            gtk_widget_set_no_show_all(power_actions_box, FALSE);
+            gtk_widget_show_all(power_actions_box);
+            gtk_widget_set_visible(power_actions_box, TRUE);
+        }
+    } else {
+        g_print("[Panel] Error: power_actions_box is NULL\n");
+    }
+}
+
+static void on_power_action_shutdown(GtkButton *btn, gpointer data) { (void)btn; (void)data; power_client_shutdown(); }
+static void on_power_action_reboot(GtkButton *btn, gpointer data) { (void)btn; (void)data; power_client_reboot(); }
+static void on_power_action_suspend(GtkButton *btn, gpointer data) { (void)btn; (void)data; power_client_suspend(); }
+static void on_power_action_lock(GtkButton *btn, gpointer data) { (void)btn; (void)data; power_client_lock_screen(); }
 
 static void on_tray_button_press(GtkButton *btn, GdkEventButton *event, gpointer data) {
      (void)data;
@@ -453,6 +511,79 @@ GtkWidget* create_venom_panel(void) {
     }
     tray_item_list_free(items);
     
+    /* --- Power Management UI --- */
+    power_client_init();
+    
+    /* 1. Power Profile Section */
+    GtkWidget *power_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+    
+    /* Toggle Button */
+    power_profile_btn = gtk_button_new();
+    gtk_button_set_relief(GTK_BUTTON(power_profile_btn), GTK_RELIEF_NONE);
+    GtkWidget *prof_icon = gtk_image_new_from_icon_name("power-profile-balanced-symbolic", GTK_ICON_SIZE_MENU);
+    gtk_container_add(GTK_CONTAINER(power_profile_btn), prof_icon);
+    g_signal_connect(power_profile_btn, "clicked", G_CALLBACK(on_power_profile_clicked), NULL);
+    gtk_box_pack_start(GTK_BOX(power_box), power_profile_btn, FALSE, FALSE, 0);
+    
+    /* Profile Lable */
+    power_profile_label = gtk_label_new("Balanced"); /* value updated by callback */
+    /* Add style class for label */
+    GtkStyleContext *pl_ctx = gtk_widget_get_style_context(power_profile_label);
+    gtk_style_context_add_class(pl_ctx, "power-label");
+    /* Apply some padding */
+    gtk_widget_set_margin_end(power_profile_label, 8);
+    gtk_box_pack_start(GTK_BOX(power_box), power_profile_label, FALSE, FALSE, 0);
+    
+    gtk_box_pack_start(GTK_BOX(r_box), power_box, FALSE, FALSE, 0);
+    
+    /* 2. Power Actions Section */
+    GtkWidget *actions_container = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+    
+    /* Expanded Actions Box (Hidden) */
+    power_actions_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+    
+    /* Helper to create action buttons */
+    GtkWidget *btn_shut = gtk_button_new_from_icon_name("system-shutdown-symbolic", GTK_ICON_SIZE_MENU);
+    gtk_button_set_relief(GTK_BUTTON(btn_shut), GTK_RELIEF_NONE);
+    gtk_widget_set_tooltip_text(btn_shut, "Shutdown");
+    g_signal_connect(btn_shut, "clicked", G_CALLBACK(on_power_action_shutdown), NULL);
+    gtk_box_pack_start(GTK_BOX(power_actions_box), btn_shut, FALSE, FALSE, 0);
+    
+    GtkWidget *btn_reb = gtk_button_new_from_icon_name("system-reboot-symbolic", GTK_ICON_SIZE_MENU);
+    gtk_button_set_relief(GTK_BUTTON(btn_reb), GTK_RELIEF_NONE);
+    gtk_widget_set_tooltip_text(btn_reb, "Reboot");
+    g_signal_connect(btn_reb, "clicked", G_CALLBACK(on_power_action_reboot), NULL);
+    gtk_box_pack_start(GTK_BOX(power_actions_box), btn_reb, FALSE, FALSE, 0);
+    
+    GtkWidget *btn_susp = gtk_button_new_from_icon_name("system-suspend-symbolic", GTK_ICON_SIZE_MENU);
+    gtk_button_set_relief(GTK_BUTTON(btn_susp), GTK_RELIEF_NONE);
+    gtk_widget_set_tooltip_text(btn_susp, "Suspend");
+    g_signal_connect(btn_susp, "clicked", G_CALLBACK(on_power_action_suspend), NULL);
+    gtk_box_pack_start(GTK_BOX(power_actions_box), btn_susp, FALSE, FALSE, 0);
+    
+    GtkWidget *btn_lock = gtk_button_new_from_icon_name("system-lock-screen-symbolic", GTK_ICON_SIZE_MENU);
+    gtk_button_set_relief(GTK_BUTTON(btn_lock), GTK_RELIEF_NONE);
+    gtk_widget_set_tooltip_text(btn_lock, "Lock Screen");
+    g_signal_connect(btn_lock, "clicked", G_CALLBACK(on_power_action_lock), NULL);
+    gtk_box_pack_start(GTK_BOX(power_actions_box), btn_lock, FALSE, FALSE, 0);
+    
+    gtk_box_pack_start(GTK_BOX(actions_container), power_actions_box, FALSE, FALSE, 0);
+    gtk_widget_set_no_show_all(power_actions_box, TRUE);
+    gtk_widget_hide(power_actions_box);
+    
+    /* Main Toggle Button */
+    GtkWidget *power_toggle_btn = gtk_button_new_from_icon_name("system-shutdown-symbolic", GTK_ICON_SIZE_MENU);
+    gtk_button_set_relief(GTK_BUTTON(power_toggle_btn), GTK_RELIEF_NONE);
+    gtk_widget_set_tooltip_text(power_toggle_btn, "Power Menu");
+    g_signal_connect(power_toggle_btn, "clicked", G_CALLBACK(on_power_action_toggle), NULL);
+    gtk_box_pack_start(GTK_BOX(actions_container), power_toggle_btn, FALSE, FALSE, 0);
+    
+    gtk_box_pack_start(GTK_BOX(r_box), actions_container, FALSE, FALSE, 0);
+    
+    /* Register Profile Callback */
+    power_client_on_profile_changed(on_power_profile_changed, NULL);
+    power_get_active_profile();
+    
     gtk_box_pack_start(GTK_BOX(r_box), create_system_icons(), FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(r_box), create_clock_widget(), FALSE, FALSE, 0);
     
@@ -477,6 +608,7 @@ GtkWidget* create_venom_panel(void) {
 int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
     GtkWidget *panel = create_venom_panel();
+    g_signal_connect(panel, "destroy", G_CALLBACK(power_client_cleanup), NULL);
     g_signal_connect(panel, "destroy", G_CALLBACK(gtk_main_quit), NULL);
     gtk_widget_show_all(panel);
     gtk_main();
