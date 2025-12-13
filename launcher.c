@@ -402,6 +402,7 @@ void populate_applications_grid(GtkWidget *stack) {
                 gchar *icon = g_key_file_get_string(keyfile, "Desktop Entry", "Icon", NULL);
                 
                 GtkWidget *app_btn = gtk_button_new();
+                gtk_widget_set_name(app_btn, "app-grid-button");
                 gtk_widget_set_size_request(app_btn, 120, 120);
                 GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
                 
@@ -409,9 +410,9 @@ void populate_applications_grid(GtkWidget *stack) {
                 GdkPixbuf *pixbuf = NULL;
                 if (icon) {
                     if (g_path_is_absolute(icon)) {
-                        pixbuf = gdk_pixbuf_new_from_file_at_scale(icon, 48, 48, TRUE, NULL);
+                        pixbuf = gdk_pixbuf_new_from_file_at_scale(icon, 67, 67, TRUE, NULL);
                     } else {
-                        pixbuf = gtk_icon_theme_load_icon(icon_theme, icon, 48, GTK_ICON_LOOKUP_FORCE_SIZE, NULL);
+                        pixbuf = gtk_icon_theme_load_icon(icon_theme, icon, 67, GTK_ICON_LOOKUP_FORCE_SIZE, NULL);
                     }
                 }
                 

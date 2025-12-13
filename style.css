@@ -9,15 +9,15 @@ window {
 /* 1. الدوك المصغر (Slim Dock) - تم تقليل الأحجام */
 /* ------------------------------------------------ */
 #dock-box {
-    background-color: rgba(0, 0, 0, 0.562);
-    border: 1px solid rgb(0, 252, 210);
-    
+    background-color: rgba(0, 0, 0, 0.144);
+    border: 1px solid rgba(24, 24, 24, 0.185);
+
     /* تقليل الانحناء ليناسب الحجم الصغير */
-    border-radius: 16px; 
-    
+    border-radius: 16px;
+
     /* تصغير الهوامش الداخلية بنسبة 50% تقريباً */
-    padding: 4px 6px; 
-    
+    padding: 4px 6px;
+
     margin: 5px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0);
 }
@@ -26,23 +26,24 @@ window {
 button {
     background: transparent;
     border: none;
-    
+
     /* تقليل حشوة الزر نفسه ليصغر الحجم الكلي */
-    padding: 4px; 
-    
+    padding: 4px;
+
     border-radius: 12px;
-    margin: 1px; /* تقليل المسافة بين الأيقونات */
+    margin: 1px;
+    /* تقليل المسافة بين الأيقونات */
     color: rgb(255, 255, 255);
     transition: all 0.2s ease;
 }
 
 button:hover {
     background-color: rgb(40, 40, 50);
-    box-shadow: 0 0 5px rgb(0, 252, 210);
+    /* box-shadow: 0 0 5px rgb(0, 252, 210); */
 }
 
 button:active {
-    background-color: rgb(0, 252, 210);
+    /* background-color: rgb(0, 252, 210); */
     color: rgb(0, 0, 0);
     -gtk-icon-transform: scale(0.9);
 }
@@ -66,13 +67,14 @@ button:active {
 .pinned-app:hover {
     opacity: 1.0;
 }
+
 /* ------------------------------------------------ */
 /* 2. القاذف الشبح (Ghost Launcher) - شفافية كاملة */
 /* ------------------------------------------------ */
 
 #launcher-window {
     /* شفافية كاملة للنافذة الأم */
-    background-color: rgba(0, 0, 0, 0); 
+    background-color: rgba(0, 0, 0, 0);
     border: none;
 }
 
@@ -83,15 +85,16 @@ button:active {
 
 #launcher-window grid {
     /* خلفية شفافة تماماً (أو شبه معدومة إذا أردت ظلاً خفيفاً جداً) */
-    background-color: rgba(0, 0, 0, 0); 
-    
+    background-color: rgba(0, 0, 0, 0);
+
     /* الإبقاء على الحدود فقط ليعرف المستخدم حدود القائمة */
-    border: 1px solid rgba(0, 252, 210, 0.3); 
-    
+    /* border: 1px solid rgba(0, 0, 0, 0); */
+
     border-radius: 24px;
     padding: 30px;
     margin: 30px;
-}
+} 
+
 
 /* ------------------------------------------------ */
 /* أزرار التطبيقات (App Grid) */
@@ -100,28 +103,31 @@ button:active {
 #app-grid-button {
     background-color: transparent;
     border: 1px solid transparent;
-    
+
     /* تصغير الأزرار في القاذف أيضاً لتتناسب مع الدوك */
-    padding: 10px; 
+    padding: 10px;
     border-radius: 14px;
     margin: 6px;
-    min-width: 80px;  /* تصغير العرض */
-    min-height: 80px; /* تصغير الطول */
-    
+    min-width: 80px;
+    /* تصغير العرض */
+    min-height: 80px;
+    /* تصغير الطول */
+
     color: rgb(255, 255, 255);
     font-weight: bold;
 }
 
-#app-grid-button:hover {
+ #app-grid-button:hover {
     /* عند الهوفر: خلفية خفيفة جداً لتبرز الأيقونة */
     background-color: rgba(0, 0, 0, 0);
-    border: 1px solid rgb(0, 252, 210);
+    border: 1px solid rgba(49, 182, 192, 0.459);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0);
     -gtk-icon-transform: scale(1.1);
-}
+} 
+
 
 #app-grid-button:active {
-    background-color: rgb(0, 252, 210);
+    background-color: rgba(49, 182, 192, 0.459);
     color: rgb(0, 0, 0);
     -gtk-icon-transform: scale(0.9);
 }
@@ -133,9 +139,11 @@ button:active {
 #launcher-button {
     background-color: rgba(0, 0, 0, 0.87);
     border: 1px solid rgb(255, 255, 255);
-    border-radius: 12px; /* تصغير الانحناء */
+    border-radius: 12px;
+    /* تصغير الانحناء */
     margin-right: 10px;
-    padding: 4px; /* تصغير الزر */
+    padding: 4px;
+    /* تصغير الزر */
 }
 
 #launcher-button:hover {
@@ -159,7 +167,8 @@ menu {
 menuitem {
     background: transparent;
     border-radius: 6px;
-    padding: 6px 10px; /* تصغير عناصر القائمة */
+    padding: 6px 10px;
+    /* تصغير عناصر القائمة */
     color: rgb(255, 255, 255);
 }
 

@@ -1,13 +1,13 @@
 #launcher-window {
     background-color: rgba(0, 0, 0, 0);
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0);
 }
 
 
 
 entry:focus {
-    background-color: rgba(0, 0, 0, 0.295);
+    background-color: rgba(0, 0, 0, 0);
     border-color: #00ffc8;
     box-shadow: 0 0 0 2px rgba(0, 255, 200, 0.4);
 }
@@ -59,7 +59,7 @@ dialog headerbar {
 }
 
 dialog button {
-    background-color: rgba(0, 0, 0, 0.562);
+    background-color: rgba(0, 0, 0, 0);
     margin: 5px;
 }
 
@@ -76,7 +76,7 @@ dialog button:hover {
 }
 
 .badge {
-    background-color: rgba(53, 132, 228, 0.2);
+    background-color: rgba(0, 0, 0, 0);
     color: #3584e4;
     border-radius: 5px;
     padding: 2px 8px;
