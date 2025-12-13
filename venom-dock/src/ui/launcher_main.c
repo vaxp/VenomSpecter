@@ -85,32 +85,17 @@ on_name_acquired(GDBusConnection *connection,
     launcher_start_standalone();
 }
 
-static void
-on_name_lost(GDBusConnection *connection,
-             const gchar *name,
-             gpointer user_data)
-{
-    (void)connection; (void)name; (void)user_data;
-    g_print("Debug: Name lost '%s'. Is another instance running?\n", name);
-    /* If we lose the name, we might as well exit or just stay idle? 
-       Usually means another instance took over or we failed to acquire. */
-    // gtk_main_quit(); 
-}
-
 int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
-
-    g_print("Debug: Starting venom-launcher...\n");
 
     /* Try to call Toggle on existing instance first */
     GError *error = NULL;
     GDBusConnection *conn = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, &error);
     if (!conn) {
-        g_error("Debug: Failed to connect to bus: %s", error->message);
+        g_error("Failed to connect to bus: %s", error->message);
         return 1;
     }
 
-    g_print("Debug: Checking for existing instance...\n");
     /* Check if name has owner by trying to call Toggle */
     GVariant *result = g_dbus_connection_call_sync(conn,
                                                    "org.venomspecter.Launcher",
@@ -125,14 +110,13 @@ int main(int argc, char *argv[]) {
                                                    &error);
 
     if (result) {
-        g_print("Debug: Existing instance toggled. Exiting.\n");
         /* Success! Launcher toggled. Exit. */
         g_variant_unref(result);
         return 0;
     }
     
     if (error) {
-        g_print("Debug: No existing instance (Error: %s). Assuming role of Server.\n", error->message);
+        /* Failed to find service, so we start it. */
         g_clear_error(&error); 
     }
 
@@ -142,14 +126,12 @@ int main(int argc, char *argv[]) {
                                     G_BUS_NAME_OWNER_FLAGS_NONE,
                                     on_bus_acquired,
                                     on_name_acquired,
-                                    on_name_lost,
+                                    NULL,
                                     NULL,
                                     NULL);
 
-    g_print("Debug: Entering GTK Main Loop...\n");
     gtk_main();
     
     g_bus_unown_name(owner_id);
-    g_print("Debug: Exited GTK Main Loop.\n");
     return 0;
 }

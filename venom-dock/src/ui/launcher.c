@@ -144,8 +144,15 @@ void on_next_page_clicked(GtkWidget *widget, gpointer data) {
 /* Callback from Pager to close launcher */
 static void on_pager_element_clicked(int desktop_idx, gpointer user_data) {
     (void)desktop_idx; (void)user_data;
-    if (launcher_window) gtk_widget_hide(launcher_window);
-    if (is_standalone) gtk_main_quit();
+    if (launcher_window) {
+        gtk_widget_destroy(launcher_window);
+        launcher_window = NULL;
+        app_stack = NULL;
+        search_entry = NULL;
+        search_results_view = NULL;
+        prev_button = NULL;
+        next_button = NULL;
+    }
 }
 
 /* Launcher button clicked - show applications grid */
