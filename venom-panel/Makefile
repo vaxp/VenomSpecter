@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -O2 -Iinclude $(shell pkg-config --cflags gtk+-3.0 gio-2.0 libnm)
-LIBS = $(shell pkg-config --libs gtk+-3.0 gio-2.0 libnm) -lX11 -lpulse
+LIBS = $(shell pkg-config --libs gtk+-3.0 gio-2.0 libnm) -lX11 -lpulse -lm
 
 SRCDIR = src
 OBJDIR = obj

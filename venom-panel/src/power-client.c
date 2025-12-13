@@ -9,6 +9,9 @@ static GDBusProxy *_proxy = NULL;
 static PowerProfileCallback _profile_cb = NULL;
 static gpointer _profile_data = NULL;
 
+static PowerBatteryCallback _batt_cb = NULL;
+static gpointer _batt_data = NULL;
+
 static void ensure_proxy(void);
 
 static void on_signal(GDBusProxy *proxy, gchar *sender_name, gchar *signal_name,
@@ -20,6 +23,13 @@ static void on_signal(GDBusProxy *proxy, gchar *sender_name, gchar *signal_name,
             const gchar *profile;
             g_variant_get(parameters, "(&s)", &profile);
             _profile_cb(profile, _profile_data);
+        }
+    } else if (g_strcmp0(signal_name, "BatteryChanged") == 0) {
+        if (_batt_cb) {
+            gdouble pct;
+            gboolean charging;
+            g_variant_get(parameters, "(db)", &pct, &charging);
+            _batt_cb(pct, charging, 0, _batt_data); /* time not in signal usually, or we can ignore */
         }
     }
 }
@@ -91,4 +101,24 @@ void power_set_active_profile(const gchar *profile) {
 void power_client_on_profile_changed(PowerProfileCallback cb, gpointer user_data) {
     _profile_cb = cb;
     _profile_data = user_data;
+}
+
+void power_get_battery_info(void) {
+    ensure_proxy();
+    if (!_proxy) return;
+    
+    GVariant *res = g_dbus_proxy_call_sync(_proxy, "GetBatteryInfo", NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL);
+    if (res) {
+        gdouble pct;
+        gboolean charging;
+        gint64 time_empty;
+        g_variant_get(res, "(dbx)", &pct, &charging, &time_empty);
+        if (_batt_cb) _batt_cb(pct, charging, time_empty, _batt_data);
+        g_variant_unref(res);
+    }
+}
+
+void power_client_on_battery_changed(PowerBatteryCallback cb, gpointer user_data) {
+    _batt_cb = cb;
+    _batt_data = user_data;
 }
