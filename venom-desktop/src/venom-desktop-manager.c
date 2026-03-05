@@ -921,8 +921,91 @@ static void on_open_terminal(GtkWidget *item, gpointer data) {
     g_free(cmd);
 }
 
-static void on_refresh_clicked(GtkWidget *item, gpointer data) {
-    refresh_icons();
+static void on_refresh_clicked(GtkWidget *item, gpointer data) { (void)item; (void)data; refresh_icons(); }
+
+/* --- Create Document from Template --- */
+
+static void on_create_document(GtkWidget *menuitem, gpointer data) {
+    const char *template_path = (const char *)data;
+    if (!template_path) return;
+
+    /* Get basename and build destination path on Desktop */
+    char *basename = g_path_get_basename(template_path);
+    char *desktop  = g_strdup_printf("%s/Desktop", g_get_home_dir());
+    char *dest_path = g_strdup_printf("%s/%s", desktop, basename);
+
+    /* If file exists, append a counter to avoid overwriting */
+    int  counter = 1;
+    while (g_file_test(dest_path, G_FILE_TEST_EXISTS)) {
+        g_free(dest_path);
+        /* Split name and extension */
+        char *dot = strrchr(basename, '.');
+        if (dot) {
+            char *name_part = g_strndup(basename, dot - basename);
+            dest_path = g_strdup_printf("%s/%s (%d)%s", desktop, name_part, counter++, dot);
+            g_free(name_part);
+        } else {
+            dest_path = g_strdup_printf("%s/%s (%d)", desktop, basename, counter++);
+        }
+    }
+
+    GFile *src  = g_file_new_for_path(template_path);
+    GFile *dest = g_file_new_for_path(dest_path);
+    GError *err = NULL;
+    g_file_copy(src, dest, G_FILE_COPY_NONE, NULL, NULL, NULL, &err);
+    if (err) {
+        g_warning("[Template] Copy failed: %s", err->message);
+        g_error_free(err);
+    } else {
+        refresh_icons();
+    }
+
+    g_object_unref(src);
+    g_object_unref(dest);
+    g_free(dest_path);
+    g_free(desktop);
+    g_free(basename);
+}
+
+/* Build the "Create Document" submenu from ~/Templates */
+static GtkWidget *build_templates_submenu(void) {
+    char *templates_dir = g_strdup_printf("%s/Templates", g_get_home_dir());
+    GtkWidget *submenu = gtk_menu_new();
+
+    GDir *dir = g_dir_open(templates_dir, 0, NULL);
+    if (dir) {
+        const char *fname;
+        int count = 0;
+        while ((fname = g_dir_read_name(dir))) {
+            if (fname[0] == '.') continue; /* skip hidden */
+
+            char *full_path = g_strdup_printf("%s/%s", templates_dir, fname);
+            GtkWidget *item = gtk_menu_item_new_with_label(fname);
+            /* Pass path ownership to the signal; freed by GClosureNotify */
+            g_signal_connect_data(item, "activate",
+                                  G_CALLBACK(on_create_document),
+                                  g_strdup(full_path),
+                                  (GClosureNotify)g_free, 0);
+            gtk_menu_shell_append(GTK_MENU_SHELL(submenu), item);
+            g_free(full_path);
+            count++;
+        }
+        g_dir_close(dir);
+
+        if (count == 0) {
+            /* No templates found - show disabled hint */
+            GtkWidget *empty = gtk_menu_item_new_with_label("(No templates in ~/Templates)");
+            gtk_widget_set_sensitive(empty, FALSE);
+            gtk_menu_shell_append(GTK_MENU_SHELL(submenu), empty);
+        }
+    } else {
+        GtkWidget *empty = gtk_menu_item_new_with_label("(~/Templates not found)");
+        gtk_widget_set_sensitive(empty, FALSE);
+        gtk_menu_shell_append(GTK_MENU_SHELL(submenu), empty);
+    }
+
+    g_free(templates_dir);
+    return submenu;
 }
 
 /* --- Icon Loading & Placement --- */
@@ -1156,13 +1239,18 @@ static gboolean on_bg_button_press(GtkWidget *widget, GdkEventButton *event, gpo
     }
     if (event->button == 3) {
         GtkWidget *menu = gtk_menu_new();
-        GtkWidget *new_folder = gtk_menu_item_new_with_label("Create Folder");
-        GtkWidget *term = gtk_menu_item_new_with_label("Open Terminal Here");
-        GtkWidget *paste = gtk_menu_item_new_with_label("Paste");
-        GtkWidget *sep1 = gtk_separator_menu_item_new();
-        GtkWidget *refresh = gtk_menu_item_new_with_label("Refresh");
-        GtkWidget *sep2 = gtk_separator_menu_item_new();
-        GtkWidget *quit = gtk_menu_item_new_with_label("Quit Desktop");
+        GtkWidget *new_folder   = gtk_menu_item_new_with_label("Create Folder");
+        GtkWidget *create_doc   = gtk_menu_item_new_with_label("📄 Create Document");
+        GtkWidget *term         = gtk_menu_item_new_with_label("Open Terminal Here");
+        GtkWidget *paste        = gtk_menu_item_new_with_label("Paste");
+        GtkWidget *sep1         = gtk_separator_menu_item_new();
+        GtkWidget *refresh      = gtk_menu_item_new_with_label("Refresh");
+        GtkWidget *sep2         = gtk_separator_menu_item_new();
+        GtkWidget *quit         = gtk_menu_item_new_with_label("Quit Desktop");
+
+        /* Templates submenu */
+        GtkWidget *templates_sub = build_templates_submenu();
+        gtk_menu_item_set_submenu(GTK_MENU_ITEM(create_doc), templates_sub);
 
         g_signal_connect(new_folder, "activate", G_CALLBACK(on_create_folder), widget);
         g_signal_connect(term, "activate", G_CALLBACK(on_open_terminal), NULL);
@@ -1171,11 +1259,12 @@ static gboolean on_bg_button_press(GtkWidget *widget, GdkEventButton *event, gpo
         g_signal_connect(quit, "activate", G_CALLBACK(gtk_main_quit), NULL);
 
         /* Wallpaper item */
-        GtkWidget *sep_wp = gtk_separator_menu_item_new();
+        GtkWidget *sep_wp  = gtk_separator_menu_item_new();
         GtkWidget *wallpaper = gtk_menu_item_new_with_label("🖼 Change Wallpaper");
         g_signal_connect(wallpaper, "activate", G_CALLBACK(on_change_wallpaper), widget);
 
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), new_folder);
+        gtk_menu_shell_append(GTK_MENU_SHELL(menu), create_doc);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), term);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), paste);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), sep1);
