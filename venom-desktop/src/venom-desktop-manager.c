@@ -34,6 +34,7 @@ static int screen_h = 0;
 static void ensure_config_dir(void); /* forward declaration */
 #define WALLPAPER_CONFIG_FILE "/home/x/.config/venom/wallpaper"
 #define WALLPAPER_DIR         "/usr/share/backgrounds"
+#define WALLPAPER_DIRS_CONFIG "/home/x/.config/venom/wallpaper-dirs"
 static GdkPixbuf *wallpaper_pixbuf = NULL;
 static char *current_wallpaper_path = NULL;
 
@@ -769,6 +770,7 @@ static void add_images_from_dir(const char *dir_path, GtkWidget *flow) {
 
 /* Callback for Browse button - lets user pick a custom wallpaper folder */
 static void on_browse_folder_clicked(GtkButton *btn, gpointer user_data) {
+    (void)btn;
     GtkWidget *flow = GTK_WIDGET(user_data);
 
     GtkWidget *chooser = gtk_file_chooser_dialog_new(
@@ -784,6 +786,21 @@ static void on_browse_folder_clicked(GtkButton *btn, gpointer user_data) {
         char *folder = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(chooser));
         if (folder) {
             add_images_from_dir(folder, flow);
+
+            /* Persist the custom dir (append if not already saved) */
+            char *existing = NULL;
+            g_file_get_contents(WALLPAPER_DIRS_CONFIG, &existing, NULL, NULL);
+            gboolean already_saved = existing && strstr(existing, folder) != NULL;
+            if (!already_saved) {
+                GString *buf = g_string_new(existing ? existing : "");
+                if (buf->len > 0 && buf->str[buf->len - 1] != '\n')
+                    g_string_append_c(buf, '\n');
+                g_string_append_printf(buf, "%s\n", folder);
+                ensure_config_dir();
+                g_file_set_contents(WALLPAPER_DIRS_CONFIG, buf->str, -1, NULL);
+                g_string_free(buf, TRUE);
+            }
+            g_free(existing);
             g_free(folder);
         }
     }
@@ -839,6 +856,21 @@ static void show_wallpaper_picker(GtkWidget *parent_widget) {
 
     /* Load default backgrounds directory */
     add_images_from_dir(WALLPAPER_DIR, flow);
+
+    /* Load previously saved custom directories */
+    {
+        char *dirs_content = NULL;
+        if (g_file_get_contents(WALLPAPER_DIRS_CONFIG, &dirs_content, NULL, NULL)) {
+            gchar **lines = g_strsplit(dirs_content, "\n", -1);
+            for (int i = 0; lines[i] != NULL; i++) {
+                g_strstrip(lines[i]);
+                if (strlen(lines[i]) > 1 && lines[i][0] == '/')
+                    add_images_from_dir(lines[i], flow);
+            }
+            g_strfreev(lines);
+            g_free(dirs_content);
+        }
+    }
 
     gtk_widget_show_all(dialog);
 
