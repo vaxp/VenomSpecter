@@ -30,6 +30,47 @@ static GtkWidget *icon_layout = NULL;
 static int screen_w = 0;
 static int screen_h = 0;
 
+/* --- Wallpaper --- */
+static void ensure_config_dir(void); /* forward declaration */
+#define WALLPAPER_CONFIG_FILE "/home/x/.config/venom/wallpaper"
+#define WALLPAPER_DIR         "/usr/share/backgrounds"
+static GdkPixbuf *wallpaper_pixbuf = NULL;
+static char *current_wallpaper_path = NULL;
+
+static void load_wallpaper(const char *path) {
+    if (!path || strlen(path) == 0) return;
+
+    GError *err = NULL;
+    GdkPixbuf *pb = gdk_pixbuf_new_from_file_at_scale(
+                        path, screen_w, screen_h, FALSE, &err);
+    if (!pb) {
+        g_warning("[Wallpaper] Failed to load '%s': %s", path, err ? err->message : "?");
+        if (err) g_error_free(err);
+        return;
+    }
+
+    if (wallpaper_pixbuf) g_object_unref(wallpaper_pixbuf);
+    wallpaper_pixbuf = pb;
+
+    g_free(current_wallpaper_path);
+    current_wallpaper_path = g_strdup(path);
+
+    /* Save path to config */
+    ensure_config_dir();
+    g_file_set_contents(WALLPAPER_CONFIG_FILE, path, -1, NULL);
+
+    if (icon_layout) gtk_widget_queue_draw(icon_layout);
+}
+
+static void load_saved_wallpaper(void) {
+    char *path = NULL;
+    if (g_file_get_contents(WALLPAPER_CONFIG_FILE, &path, NULL, NULL)) {
+        g_strstrip(path);
+        if (strlen(path) > 0) load_wallpaper(path);
+        g_free(path);
+    }
+}
+
 /* --- Resize on Screen Change --- */
 
 static void update_desktop_geometry(GdkScreen *screen) {
@@ -47,6 +88,9 @@ static void update_desktop_geometry(GdkScreen *screen) {
     gtk_window_move(GTK_WINDOW(main_window), r.x, r.y);
     gtk_widget_set_size_request(icon_layout, screen_w, screen_h);
     gtk_layout_set_size(GTK_LAYOUT(icon_layout), screen_w, screen_h);
+
+    /* Reload wallpaper at new resolution */
+    if (current_wallpaper_path) load_wallpaper(current_wallpaper_path);
 }
 
 /* GdkScreen::monitors-changed fires on X11 when resolution or monitor config changes */
@@ -660,7 +704,111 @@ static gboolean on_item_button_press(GtkWidget *widget, GdkEventButton *event, g
 
 /* Desktop Background Context Menu */
 
-static void on_bg_paste(GtkWidget *item, gpointer data) { paste_from_clipboard(); }
+static void on_bg_paste(GtkWidget *item, gpointer data) { (void)item; (void)data; paste_from_clipboard(); }
+
+/* --- Wallpaper Picker --- */
+
+static gboolean is_image_file(const char *name) {
+    const char *exts[] = {".jpg",".jpeg",".png",".bmp",".gif",".webp",".tiff",".svg", NULL};
+    char *lower = g_ascii_strdown(name, -1);
+    gboolean ok = FALSE;
+    for (int i = 0; exts[i]; i++) {
+        if (g_str_has_suffix(lower, exts[i])) { ok = TRUE; break; }
+    }
+    g_free(lower);
+    return ok;
+}
+
+static void show_wallpaper_picker(GtkWidget *parent_widget) {
+    GtkWidget *dialog = gtk_dialog_new_with_buttons(
+        "Change Wallpaper",
+        GTK_WINDOW(main_window),
+        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+        "_Cancel", GTK_RESPONSE_CANCEL,
+        "_Apply",  GTK_RESPONSE_ACCEPT,
+        NULL);
+    gtk_window_set_default_size(GTK_WINDOW(dialog), 780, 520);
+
+    GtkWidget *content = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    gtk_container_set_border_width(GTK_CONTAINER(content), 8);
+
+    /* Scrollable area */
+    GtkWidget *scroll = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
+                                   GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_widget_set_vexpand(scroll, TRUE);
+    gtk_box_pack_start(GTK_BOX(content), scroll, TRUE, TRUE, 0);
+
+    /* FlowBox as grid */
+    GtkWidget *flow = gtk_flow_box_new();
+    gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(flow), 4);
+    gtk_flow_box_set_min_children_per_line(GTK_FLOW_BOX(flow), 2);
+    gtk_flow_box_set_selection_mode(GTK_FLOW_BOX(flow), GTK_SELECTION_SINGLE);
+    gtk_flow_box_set_row_spacing(GTK_FLOW_BOX(flow), 8);
+    gtk_flow_box_set_column_spacing(GTK_FLOW_BOX(flow), 8);
+    gtk_widget_set_margin_start(flow, 8);
+    gtk_widget_set_margin_end(flow, 8);
+    gtk_widget_set_margin_top(flow, 8);
+    gtk_widget_set_margin_bottom(flow, 8);
+    gtk_container_add(GTK_CONTAINER(scroll), flow);
+
+    /* Enumerate /usr/share/backgrounds/ */
+    GDir *dir = g_dir_open(WALLPAPER_DIR, 0, NULL);
+    if (dir) {
+        const char *fname;
+        while ((fname = g_dir_read_name(dir))) {
+            if (!is_image_file(fname)) continue;
+
+            char *full_path = g_strdup_printf("%s/%s", WALLPAPER_DIR, fname);
+
+            /* Thumbnail */
+            GdkPixbuf *thumb = gdk_pixbuf_new_from_file_at_scale(
+                                   full_path, 180, 110, FALSE, NULL);
+            GtkWidget *img;
+            if (thumb) {
+                img = gtk_image_new_from_pixbuf(thumb);
+                g_object_unref(thumb);
+            } else {
+                img = gtk_image_new_from_icon_name("image-missing", GTK_ICON_SIZE_DIALOG);
+            }
+
+            /* Box: thumbnail + label */
+            GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+            gtk_box_pack_start(GTK_BOX(vbox), img, FALSE, FALSE, 0);
+
+            GtkWidget *lbl = gtk_label_new(fname);
+            gtk_label_set_max_width_chars(GTK_LABEL(lbl), 22);
+            gtk_label_set_ellipsize(GTK_LABEL(lbl), PANGO_ELLIPSIZE_END);
+            gtk_box_pack_start(GTK_BOX(vbox), lbl, FALSE, FALSE, 0);
+
+            /* Store path on the box */
+            g_object_set_data_full(G_OBJECT(vbox), "wallpaper-path",
+                                   full_path, g_free);
+
+            gtk_flow_box_insert(GTK_FLOW_BOX(flow), vbox, -1);
+        }
+        g_dir_close(dir);
+    }
+
+    gtk_widget_show_all(dialog);
+
+    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+        GList *selected = gtk_flow_box_get_selected_children(GTK_FLOW_BOX(flow));
+        if (selected) {
+            GtkFlowBoxChild *child = GTK_FLOW_BOX_CHILD(selected->data);
+            GtkWidget *box = gtk_bin_get_child(GTK_BIN(child));
+            const char *path = g_object_get_data(G_OBJECT(box), "wallpaper-path");
+            if (path) load_wallpaper(path);
+            g_list_free(selected);
+        }
+    }
+
+    gtk_widget_destroy(dialog);
+}
+
+static void on_change_wallpaper(GtkWidget *item, gpointer data) {
+    show_wallpaper_picker(GTK_WIDGET(data));
+}
 
 static void on_create_folder(GtkWidget *item, gpointer data) {
     GtkWidget *dialog = gtk_dialog_new_with_buttons("Create Folder", GTK_WINDOW(main_window),
@@ -881,10 +1029,17 @@ static void refresh_icons() {
 /* --- Drawing & Events --- */
 
 static gboolean on_layout_draw_bg(GtkWidget *widget, cairo_t *cr, gpointer data) {
+    (void)widget; (void)data;
     cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
     cairo_paint(cr);
     cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
-    return FALSE; 
+
+    /* Draw wallpaper if loaded */
+    if (wallpaper_pixbuf) {
+        gdk_cairo_set_source_pixbuf(cr, wallpaper_pixbuf, 0, 0);
+        cairo_paint(cr);
+    }
+    return FALSE;
 }
 
 static gboolean on_layout_draw_fg(GtkWidget *widget, cairo_t *cr, gpointer data) {
@@ -933,12 +1088,19 @@ static gboolean on_bg_button_press(GtkWidget *widget, GdkEventButton *event, gpo
         g_signal_connect(refresh, "activate", G_CALLBACK(on_refresh_clicked), NULL);
         g_signal_connect(quit, "activate", G_CALLBACK(gtk_main_quit), NULL);
 
+        /* Wallpaper item */
+        GtkWidget *sep_wp = gtk_separator_menu_item_new();
+        GtkWidget *wallpaper = gtk_menu_item_new_with_label("🖼 Change Wallpaper");
+        g_signal_connect(wallpaper, "activate", G_CALLBACK(on_change_wallpaper), widget);
+
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), new_folder);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), term);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), paste);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), sep1);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), refresh);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), sep2);
+        gtk_menu_shell_append(GTK_MENU_SHELL(menu), sep_wp);
+        gtk_menu_shell_append(GTK_MENU_SHELL(menu), wallpaper);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), quit);
 
         gtk_widget_show_all(menu);
@@ -1049,6 +1211,10 @@ int main(int argc, char *argv[]) {
 
     g_signal_connect(main_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
     gtk_widget_show_all(main_window);
+
+    /* Load saved wallpaper (after show_all so widget is realized) */
+    load_saved_wallpaper();
+
     malloc_trim(0);
     gtk_main();
 
