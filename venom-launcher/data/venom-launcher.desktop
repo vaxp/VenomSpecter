@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Venom Launcher
+Comment=Application Launcher for the Venom Desktop Environment
+Exec=venom-launcher
+Icon=venom-launcher
+Terminal=false
+Categories=System;
+Keywords=launcher;apps;search;
