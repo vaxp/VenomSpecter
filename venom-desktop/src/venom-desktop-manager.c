@@ -15,7 +15,9 @@
 #include <math.h>
 #include <malloc.h>
 #include <unistd.h>
+#include <dlfcn.h>
 #include <glib/gstdio.h>
+#include "venom-widget-api.h"
 
 #define ICON_SIZE 48
 #define ITEM_WIDTH 80
@@ -217,6 +219,64 @@ static gboolean get_item_position(const char *filename, int *x, int *y) {
     *y = py;
     g_key_file_free(key_file);
     return TRUE;
+}
+
+/* --- Dynamic Widget Handling --- */
+
+#define WIDGETS_DIR "/home/x/.config/venom/widgets"
+
+static void load_all_widgets(GtkWidget *layout) {
+    g_mkdir_with_parents(WIDGETS_DIR, 0755);
+    GDir *dir = g_dir_open(WIDGETS_DIR, 0, NULL);
+    if (!dir) return;
+
+    /* Build the Desktop API payload */
+    VenomDesktopAPI *desktop_api = g_new0(VenomDesktopAPI, 1);
+    desktop_api->layout_container = layout;
+    desktop_api->save_position = save_item_position;
+
+    const char *fname;
+    while ((fname = g_dir_read_name(dir))) {
+        if (!g_str_has_suffix(fname, ".so")) continue;
+
+        char *full_path = g_strdup_printf("%s/%s", WIDGETS_DIR, fname);
+        void *handle = dlopen(full_path, RTLD_NOW | RTLD_LOCAL);
+        
+        if (!handle) {
+            g_warning("[Widgets] Failed to load %s: %s", fname, dlerror());
+            g_free(full_path);
+            continue;
+        }
+
+        /* Try to load the expected struct API function */
+        VenomWidgetAPI* (*init_func)(void) = dlsym(handle, "venom_widget_init");
+        if (!init_func) {
+            g_warning("[Widgets] Missing 'venom_widget_init' in %s", fname);
+            dlclose(handle);
+            g_free(full_path);
+            continue;
+        }
+
+        VenomWidgetAPI *api = init_func();
+        if (api && api->create_widget) {
+            GtkWidget *ui = api->create_widget(desktop_api);
+            if (ui) {
+                /* Tag the widget clearly so icon refresher skips it */
+                gtk_widget_set_name(ui, "venom-widget");
+                
+                /* Get position or place arbitrarily */
+                int x = 100, y = 100;
+                get_item_position(fname, &x, &y);
+                
+                gtk_layout_put(GTK_LAYOUT(layout), ui, x, y);
+                gtk_widget_show_all(ui);
+                g_print("[Widgets] Successfully loaded '%s' V1.0 by %s\n", api->name, api->author ? api->author : "Unknown");
+            }
+        }
+        g_free(full_path);
+    }
+    g_dir_close(dir);
+    /* Note: intentionally leaking desktop_api struct here as it's required for the lifetime of plugins */
 }
 
 /* --- Recursive File Operations --- */
@@ -1160,8 +1220,22 @@ static void refresh_icons() {
     GList *children, *iter;
     children = gtk_container_get_children(GTK_CONTAINER(icon_layout));
     deselect_all();
-    for (iter = children; iter != NULL; iter = g_list_next(iter))
-        gtk_widget_destroy(GTK_WIDGET(iter->data));
+    DesktopMode active_mode = get_current_desktop_mode();
+
+    for (iter = children; iter != NULL; iter = g_list_next(iter)) {
+        GtkWidget *child = GTK_WIDGET(iter->data);
+        const gchar *name = gtk_widget_get_name(child);
+        if (g_strcmp0(name, "venom-widget") != 0) {
+            gtk_widget_destroy(child);
+        } else {
+            /* Toggle visibility of injected widgets based on mode */
+            if (active_mode == MODE_WIDGETS) {
+                gtk_widget_show(child);
+            } else {
+                gtk_widget_hide(child);
+            }
+        }
+    }
     g_list_free(children);
     
     char *desktop_path = get_current_desktop_path();
@@ -1491,6 +1565,9 @@ int main(int argc, char *argv[]) {
         "#desktop-item.selected { background: rgba(52, 152, 219, 0.4); border: 1px solid rgba(52, 152, 219, 0.8); }"
         "label { color: white; text-shadow: 1px 1px 2px black; font-weight: bold; }", -1, NULL);
     gtk_style_context_add_provider_for_screen(screen, GTK_STYLE_PROVIDER(css), 800);
+
+    /* Load Plugins First */
+    load_all_widgets(icon_layout);
 
     refresh_icons();
 

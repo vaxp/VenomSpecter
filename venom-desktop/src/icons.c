@@ -346,8 +346,13 @@ void refresh_icons(void) {
     GList *children, *iter;
     children = gtk_container_get_children(GTK_CONTAINER(icon_layout));
     deselect_all();
-    for (iter = children; iter != NULL; iter = g_list_next(iter))
-        gtk_widget_destroy(GTK_WIDGET(iter->data));
+    for (iter = children; iter != NULL; iter = g_list_next(iter)) {
+        GtkWidget *child = GTK_WIDGET(iter->data);
+        const gchar *name = gtk_widget_get_name(child);
+        if (g_strcmp0(name, "venom-widget") != 0) {
+            gtk_widget_destroy(child);
+        }
+    }
     g_list_free(children);
     
     char *desktop_path = get_current_desktop_path();

@@ -1,6 +1,6 @@
 CC      = gcc
 CFLAGS  = $(shell pkg-config --cflags gtk+-3.0 gio-2.0) -Iinclude -Wall -Wextra -O2
-LDFLAGS = $(shell pkg-config --libs gtk+-3.0 gio-2.0) -lm
+LDFLAGS = $(shell pkg-config --libs gtk+-3.0 gio-2.0) -lm -ldl
 
 SRCDIR  = src
 OBJDIR  = obj
@@ -29,8 +29,28 @@ $(TARGET): $(MAIN_SRC)
 $(SETBG_TARGET): $(SETBG_SRC)
 	$(CC) -o $@ $< $(SETBG_CFLAGS) $(SETBG_LDFLAGS)
 
+# ---- Widgets Compilation ----
+WIDGETS_DIR_SRC = src/widgets
+WIDGET__OUT_DIR = obj/widgets
+CONFIG_WIDGET_DIR = $(HOME)/.config/venom/widgets
+
+widgets: $(WIDGET__OUT_DIR)
+	@mkdir -p $(CONFIG_WIDGET_DIR)
+	@for src in $(WIDGETS_DIR_SRC)/*.c; do \
+		if [ -f "$$src" ]; then \
+			filename=$$(basename -- "$$src"); \
+			name="$${filename%.*}"; \
+			echo "Compiling widget: $$name.so"; \
+			$(CC) -shared -fPIC -o $(CONFIG_WIDGET_DIR)/$$name.so $$src $(CFLAGS) $(LDFLAGS) ; \
+		fi \
+	done
+
+$(WIDGET__OUT_DIR):
+	mkdir -p $(WIDGET__OUT_DIR)
+
 clean:
 	rm -f $(TARGET) $(SETBG_TARGET)
 	rm -f $(OBJDIR)/*.o
+	rm -f $(CONFIG_WIDGET_DIR)/*.so
 
-.PHONY: all clean
+.PHONY: all clean widgets
