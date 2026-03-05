@@ -30,6 +30,37 @@ static GtkWidget *icon_layout = NULL;
 static int screen_w = 0;
 static int screen_h = 0;
 
+/* --- Resize on Screen Change --- */
+
+static void update_desktop_geometry(GdkScreen *screen) {
+    GdkDisplay *display = gdk_screen_get_display(screen);
+    GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
+    if (!monitor) return;
+
+    GdkRectangle r;
+    gdk_monitor_get_geometry(monitor, &r);
+    screen_w = r.width;
+    screen_h = r.height;
+
+    /* Resize window and layout canvas */
+    gtk_window_resize(GTK_WINDOW(main_window), screen_w, screen_h);
+    gtk_window_move(GTK_WINDOW(main_window), r.x, r.y);
+    gtk_widget_set_size_request(icon_layout, screen_w, screen_h);
+    gtk_layout_set_size(GTK_LAYOUT(icon_layout), screen_w, screen_h);
+}
+
+/* GdkScreen::monitors-changed fires on X11 when resolution or monitor config changes */
+static void on_monitors_changed(GdkScreen *screen, gpointer user_data) {
+    (void)user_data;
+    update_desktop_geometry(screen);
+}
+
+/* GdkScreen::size-changed fires for general screen size changes (fallback) */
+static void on_screen_size_changed(GdkScreen *screen, gpointer user_data) {
+    (void)user_data;
+    update_desktop_geometry(screen);
+}
+
 /* Selection State */
 static double start_x = 0, start_y = 0;
 static double current_x = 0, current_y = 0;
@@ -975,10 +1006,17 @@ int main(int argc, char *argv[]) {
     screen_w = r.width;
     screen_h = r.height;
     gtk_window_set_default_size(GTK_WINDOW(main_window), screen_w, screen_h);
-    gtk_window_move(GTK_WINDOW(main_window), 0, 0);
+    gtk_window_move(GTK_WINDOW(main_window), r.x, r.y);
 
     icon_layout = gtk_layout_new(NULL, NULL);
     gtk_widget_set_size_request(icon_layout, screen_w, screen_h);
+    gtk_layout_set_size(GTK_LAYOUT(icon_layout), screen_w, screen_h);
+
+    /* GdkScreen has both signals on X11 (unlike GdkDisplay) */
+    g_signal_connect(screen, "monitors-changed",
+                     G_CALLBACK(on_monitors_changed), NULL);
+    g_signal_connect(screen, "size-changed",
+                     G_CALLBACK(on_screen_size_changed), NULL);
     gtk_widget_set_app_paintable(icon_layout, TRUE);
     
     /* Setup Background as Drag Dest */

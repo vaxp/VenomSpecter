@@ -1,25 +1,36 @@
-# Makefile for Venom Desktop Manager
-
-CC = gcc
-CFLAGS = $(shell pkg-config --cflags gtk+-3.0 gio-2.0) -Wall
+CC      = gcc
+CFLAGS  = $(shell pkg-config --cflags gtk+-3.0 gio-2.0) -Iinclude -Wall -Wextra -O2
 LDFLAGS = $(shell pkg-config --libs gtk+-3.0 gio-2.0) -lm
 
-TARGET = venom-desktop-manager
-SOURCES = main.c wallpaper.c icons.c filesystem.c selection.c menu.c
-OBJECTS = $(SOURCES:.c=.o)
-HEADERS = wallpaper.h icons.h filesystem.h selection.h menu.h
+SRCDIR  = src
+OBJDIR  = obj
+INCDIR  = include
 
-all: $(TARGET)
+# ---- Main desktop manager (monolithic) ----
+TARGET  = venom-desktop-manager
+MAIN_SRC = $(SRCDIR)/venom-desktop-manager.c
 
-$(TARGET): $(OBJECTS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+# ---- setbg tool ----
+SETBG_TARGET = venom-setbg
+SETBG_SRC    = $(SRCDIR)/venom-setbg.c
+SETBG_CFLAGS = $(shell pkg-config --cflags gtk+-3.0 2>/dev/null) -Iinclude -Wall -O2
+SETBG_LDFLAGS = $(shell pkg-config --libs gtk+-3.0 2>/dev/null) -lImlib2 -lX11
 
-%.o: %.c $(HEADERS)
-	$(CC) -c $< $(CFLAGS)
+all: $(OBJDIR) $(TARGET) $(SETBG_TARGET)
+
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
+
+# Build desktop manager from the monolithic source
+$(TARGET): $(MAIN_SRC)
+	$(CC) -o $@ $< $(CFLAGS) $(LDFLAGS)
+
+# Build setbg tool
+$(SETBG_TARGET): $(SETBG_SRC)
+	$(CC) -o $@ $< $(SETBG_CFLAGS) $(SETBG_LDFLAGS)
 
 clean:
-	rm -f $(OBJECTS) $(TARGET)
+	rm -f $(TARGET) $(SETBG_TARGET)
+	rm -f $(OBJDIR)/*.o
 
-rebuild: clean all
-
-.PHONY: all clean rebuild
+.PHONY: all clean

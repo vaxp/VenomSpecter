@@ -32,36 +32,61 @@ static GtkWidget *power_actions_box = NULL;
  * 4. PANEL SETUP
  * ===================================================================== */
 
+/* Central function: resize + reposition panel + update struts */
+static void update_panel_geometry(GtkWindow *window, GdkDisplay *display) {
+    GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
+    if (!monitor) return;
+
+    GdkRectangle geometry;
+    gdk_monitor_get_geometry(monitor, &geometry);
+
+    /* Resize to full width of the (new) primary monitor */
+    gtk_window_resize(window, geometry.width, 40);
+    gtk_window_move(window, geometry.x, geometry.y);
+
+    /* Update _NET_WM_STRUT_PARTIAL so the WM reserves space correctly */
+    GdkWindow *gdk_win = gtk_widget_get_window(GTK_WIDGET(window));
+    if (gdk_win) {
+        gulong strut[12] = {0};
+        strut[2] = 40;                               /* top */
+        strut[8] = (gulong)geometry.x;               /* top_start_x */
+        strut[9] = (gulong)(geometry.x + geometry.width - 1); /* top_end_x */
+        gdk_property_change(gdk_win,
+                           gdk_atom_intern("_NET_WM_STRUT_PARTIAL", FALSE),
+                           gdk_atom_intern("CARDINAL", FALSE),
+                           32, GDK_PROP_MODE_REPLACE,
+                           (guchar *)strut, 12);
+
+        gulong simple_strut[4] = {0, 0, 40, 0}; /* left, right, top, bottom */
+        gdk_property_change(gdk_win,
+                           gdk_atom_intern("_NET_WM_STRUT", FALSE),
+                           gdk_atom_intern("CARDINAL", FALSE),
+                           32, GDK_PROP_MODE_REPLACE,
+                           (guchar *)simple_strut, 4);
+    }
+}
+
 static void on_panel_realize(GtkWidget *widget, gpointer data) {
     (void)data;
     GdkWindow *gdk_window = gtk_widget_get_window(widget);
-    GdkDisplay *display = gdk_window_get_display(gdk_window);
-    GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
-    GdkRectangle geometry;
-    gdk_monitor_get_geometry(monitor, &geometry);
-    
+
     /* Set window as a panel/dock */
     gdk_window_set_type_hint(gdk_window, GDK_WINDOW_TYPE_HINT_DOCK);
-    
-    /* Reserve space at top */
-    gulong strut[12] = {0};
-    strut[2] = 40;  /* top */
-    strut[8] = 0;   /* top_start_x */
-    strut[9] = geometry.width;  /* top_end_x */
-    
-    gdk_property_change(gdk_window, 
-                       gdk_atom_intern("_NET_WM_STRUT_PARTIAL", FALSE),
-                       gdk_atom_intern("CARDINAL", FALSE),
-                       32, GDK_PROP_MODE_REPLACE,
-                       (guchar *)strut, 12);
-    
-    /* Also set _NET_WM_STRUT for older window managers */
-    gulong simple_strut[4] = {0, 0, 40, 0};  /* left, right, top, bottom */
-    gdk_property_change(gdk_window,
-                       gdk_atom_intern("_NET_WM_STRUT", FALSE),
-                       gdk_atom_intern("CARDINAL", FALSE),
-                       32, GDK_PROP_MODE_REPLACE,
-                       (guchar *)simple_strut, 4);
+
+    /* Apply struts based on current geometry */
+    GdkDisplay *display = gdk_window_get_display(gdk_window);
+    update_panel_geometry(GTK_WINDOW(widget), display);
+}
+
+/* Called when a monitor is added/removed or its resolution changes */
+static void on_monitors_changed(GdkDisplay *display, gpointer user_data) {
+    update_panel_geometry(GTK_WINDOW(user_data), display);
+}
+
+/* Fallback for older window managers that fire size-changed on GdkScreen */
+static void on_screen_size_changed(GdkScreen *screen, gpointer user_data) {
+    GdkDisplay *display = gdk_screen_get_display(screen);
+    update_panel_geometry(GTK_WINDOW(user_data), display);
 }
 
 static void toggle_control_center(GtkWidget *button, gpointer data) {
@@ -311,12 +336,22 @@ GtkWidget* create_venom_panel(void) {
     /* ✅ DOCK Type: This makes it a real panel */
     gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_DOCK);
     
-    /* Size & Position */
+    /* Size & Position (initial – will also be updated dynamically) */
     GdkDisplay *display = gdk_display_get_default();
+    GdkMonitor *primary = gdk_display_get_primary_monitor(display);
     GdkRectangle geometry;
-    gdk_monitor_get_geometry(gdk_display_get_primary_monitor(display), &geometry);
+    gdk_monitor_get_geometry(primary, &geometry);
     gtk_window_set_default_size(GTK_WINDOW(window), geometry.width, 40);
-    gtk_window_move(GTK_WINDOW(window), 0, 0);
+    gtk_window_move(GTK_WINDOW(window), geometry.x, geometry.y);
+
+    /* Listen for monitor changes (resolution / connect / disconnect) */
+    g_signal_connect(display, "monitors-changed",
+                     G_CALLBACK(on_monitors_changed), window);
+
+    /* Fallback: GdkScreen::size-changed fires on older WMs */
+    GdkScreen *screen_ev = gtk_widget_get_screen(window);
+    g_signal_connect(screen_ev, "size-changed",
+                     G_CALLBACK(on_screen_size_changed), window);
     
     /* Properties */
     gtk_window_set_keep_above(GTK_WINDOW(window), TRUE);
