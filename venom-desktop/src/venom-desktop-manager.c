@@ -134,8 +134,57 @@ static GHashTable *drag_initial_positions = NULL;
 
 /* --- Helper Functions --- */
 
+/* Desktop Modes */
+typedef enum {
+    MODE_NORMAL,
+    MODE_WORK,
+    MODE_WIDGETS
+} DesktopMode;
+
+#define MODE_CONFIG_FILE "/home/x/.config/venom/desktop-mode"
+
+static DesktopMode get_current_desktop_mode(void) {
+    char *contents = NULL;
+    gsize length = 0;
+    if (g_file_get_contents(MODE_CONFIG_FILE, &contents, &length, NULL)) {
+        if (g_str_has_prefix(contents, "work")) {
+            g_free(contents);
+            return MODE_WORK;
+        } else if (g_str_has_prefix(contents, "widgets")) {
+            g_free(contents);
+            return MODE_WIDGETS;
+        }
+        g_free(contents);
+    }
+    return MODE_NORMAL;
+}
+
 static void ensure_config_dir() {
     g_mkdir_with_parents("/home/x/.config/venom", 0755);
+}
+
+static void set_current_desktop_mode(DesktopMode mode) {
+    ensure_config_dir();
+    const char *str = "normal";
+    if (mode == MODE_WORK) str = "work";
+    else if (mode == MODE_WIDGETS) str = "widgets";
+    g_file_set_contents(MODE_CONFIG_FILE, str, -1, NULL);
+}
+
+static char* get_current_desktop_path(void) {
+    DesktopMode mode = get_current_desktop_mode();
+    if (mode == MODE_WIDGETS) {
+        return NULL;
+    }
+    const char *home = g_get_home_dir();
+    if (mode == MODE_WORK) {
+        char *work_path = g_strdup_printf("%s/Work", home);
+        if (!g_file_test(work_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR)) {
+            g_mkdir_with_parents(work_path, 0755);
+        }
+        return work_path;
+    }
+    return g_strdup_printf("%s/Desktop", home);
 }
 
 static void save_item_position(const char *filename, int x, int y) {
@@ -376,7 +425,12 @@ static void on_paste_received(GtkClipboard *clipboard, GtkSelectionData *selecti
 
         GFile *src = g_file_new_for_uri(uri);
         char *basename = g_file_get_basename(src);
-        char *dest_path = g_strdup_printf("%s/Desktop/%s", g_get_home_dir(), basename);
+        char *desktop_path = get_current_desktop_path();
+        if (!desktop_path) {
+            continue;
+        }
+        char *dest_path = g_strdup_printf("%s/%s", desktop_path, basename);
+        g_free(desktop_path);
         GFile *dest = g_file_new_for_path(dest_path);
         
         GError *err = NULL;
@@ -540,12 +594,18 @@ static void on_bg_drag_data_received(GtkWidget *widget, GdkDragContext *context,
     }
 
     /* Case 2: External Drop (Importing files) */
+    char *desktop_path = get_current_desktop_path();
+    if (!desktop_path) {
+        gtk_drag_finish(context, FALSE, FALSE, time);
+        return;
+    }
+
     gchar **uris = g_uri_list_extract_uris((const gchar *)gtk_selection_data_get_data(data));
     if (uris) {
         for (int i = 0; uris[i] != NULL; i++) {
             GFile *src = g_file_new_for_uri(uris[i]);
             char *basename = g_file_get_basename(src);
-            char *dest_path = g_strdup_printf("%s/Desktop/%s", g_get_home_dir(), basename);
+            char *dest_path = g_strdup_printf("%s/%s", desktop_path, basename);
             GFile *dest = g_file_new_for_path(dest_path);
             
             GError *err = NULL;
@@ -564,6 +624,7 @@ static void on_bg_drag_data_received(GtkWidget *widget, GdkDragContext *context,
         g_strfreev(uris);
         refresh_icons();
     }
+    g_free(desktop_path);
     gtk_drag_finish(context, TRUE, FALSE, time);
 }
 
@@ -893,6 +954,9 @@ static void on_change_wallpaper(GtkWidget *item, gpointer data) {
 }
 
 static void on_create_folder(GtkWidget *item, gpointer data) {
+    char *desktop_path = get_current_desktop_path();
+    if (!desktop_path) return;
+
     GtkWidget *dialog = gtk_dialog_new_with_buttons("Create Folder", GTK_WINDOW(main_window),
                                                     GTK_DIALOG_MODAL,
                                                     "_Cancel", GTK_RESPONSE_CANCEL,
@@ -906,19 +970,23 @@ static void on_create_folder(GtkWidget *item, gpointer data) {
     if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
         const char *name = gtk_entry_get_text(GTK_ENTRY(entry));
         if (strlen(name) > 0) {
-            char *path = g_strdup_printf("%s/Desktop/%s", g_get_home_dir(), name);
+            char *path = g_strdup_printf("%s/%s", desktop_path, name);
             g_mkdir(path, 0755);
             g_free(path);
             refresh_icons();
         }
     }
     gtk_widget_destroy(dialog);
+    g_free(desktop_path);
 }
 
 static void on_open_terminal(GtkWidget *item, gpointer data) {
-    char *cmd = g_strdup_printf("exo-open --launch TerminalEmulator --working-directory=%s/Desktop", g_get_home_dir());
+    char *desktop_path = get_current_desktop_path();
+    if (!desktop_path) return;
+    char *cmd = g_strdup_printf("exo-open --launch TerminalEmulator --working-directory=%s", desktop_path);
     g_spawn_command_line_async(cmd, NULL);
     g_free(cmd);
+    g_free(desktop_path);
 }
 
 static void on_refresh_clicked(GtkWidget *item, gpointer data) { (void)item; (void)data; refresh_icons(); }
@@ -931,7 +999,11 @@ static void on_create_document(GtkWidget *menuitem, gpointer data) {
 
     /* Get basename and build destination path on Desktop */
     char *basename = g_path_get_basename(template_path);
-    char *desktop  = g_strdup_printf("%s/Desktop", g_get_home_dir());
+    char *desktop = get_current_desktop_path();
+    if (!desktop) {
+        g_free(basename);
+        return;
+    }
     char *dest_path = g_strdup_printf("%s/%s", desktop, basename);
 
     /* If file exists, append a counter to avoid overwriting */
@@ -1092,8 +1164,9 @@ static void refresh_icons() {
         gtk_widget_destroy(GTK_WIDGET(iter->data));
     g_list_free(children);
     
-    const char *home = g_get_home_dir();
-    char *desktop_path = g_strdup_printf("%s/Desktop", home);
+    char *desktop_path = get_current_desktop_path();
+    if (!desktop_path) return;
+    
     GFile *dir = g_file_new_for_path(desktop_path);
     
     GFileEnumerator *enumerator = g_file_enumerate_children(dir,
@@ -1226,6 +1299,24 @@ static gboolean on_layout_draw_fg(GtkWidget *widget, cairo_t *cr, gpointer data)
     return FALSE;
 }
 
+static void on_mode_normal(GtkWidget *item, gpointer data) {
+    (void)item; (void)data;
+    set_current_desktop_mode(MODE_NORMAL);
+    refresh_icons();
+}
+
+static void on_mode_work(GtkWidget *item, gpointer data) {
+    (void)item; (void)data;
+    set_current_desktop_mode(MODE_WORK);
+    refresh_icons();
+}
+
+static void on_mode_widgets(GtkWidget *item, gpointer data) {
+    (void)item; (void)data;
+    set_current_desktop_mode(MODE_WIDGETS);
+    refresh_icons();
+}
+
 static gboolean on_bg_button_press(GtkWidget *widget, GdkEventButton *event, gpointer data) {
     if (event->button == 1) {
         deselect_all();
@@ -1263,11 +1354,34 @@ static gboolean on_bg_button_press(GtkWidget *widget, GdkEventButton *event, gpo
         GtkWidget *wallpaper = gtk_menu_item_new_with_label("🖼 Change Wallpaper");
         g_signal_connect(wallpaper, "activate", G_CALLBACK(on_change_wallpaper), widget);
 
+        /* Mode Submenu */
+        GtkWidget *mode_item = gtk_menu_item_new_with_label("💻 Desktop Mode");
+        GtkWidget *mode_menu = gtk_menu_new();
+        gtk_menu_item_set_submenu(GTK_MENU_ITEM(mode_item), mode_menu);
+        
+        GtkWidget *m_normal = gtk_menu_item_new_with_label("Normal (Desktop)");
+        GtkWidget *m_work = gtk_menu_item_new_with_label("Work (Work)");
+        GtkWidget *m_widgets = gtk_menu_item_new_with_label("Widgets Only");
+        
+        DesktopMode current_mode = get_current_desktop_mode();
+        if (current_mode == MODE_NORMAL) gtk_label_set_markup(GTK_LABEL(gtk_bin_get_child(GTK_BIN(m_normal))), "<b>Normal (Desktop)</b>");
+        if (current_mode == MODE_WORK) gtk_label_set_markup(GTK_LABEL(gtk_bin_get_child(GTK_BIN(m_work))), "<b>Work (Work)</b>");
+        if (current_mode == MODE_WIDGETS) gtk_label_set_markup(GTK_LABEL(gtk_bin_get_child(GTK_BIN(m_widgets))), "<b>Widgets Only</b>");
+        
+        g_signal_connect(m_normal, "activate", G_CALLBACK(on_mode_normal), NULL);
+        g_signal_connect(m_work, "activate", G_CALLBACK(on_mode_work), NULL);
+        g_signal_connect(m_widgets, "activate", G_CALLBACK(on_mode_widgets), NULL);
+        
+        gtk_menu_shell_append(GTK_MENU_SHELL(mode_menu), m_normal);
+        gtk_menu_shell_append(GTK_MENU_SHELL(mode_menu), m_work);
+        gtk_menu_shell_append(GTK_MENU_SHELL(mode_menu), m_widgets);
+
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), new_folder);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), create_doc);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), term);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), paste);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), sep1);
+        gtk_menu_shell_append(GTK_MENU_SHELL(menu), mode_item);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), refresh);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), sep2);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), sep_wp);

@@ -9,6 +9,17 @@
 #include <gtk/gtk.h>
 #include <gio/gio.h>
 
+/* Desktop Modes */
+typedef enum {
+    MODE_NORMAL,
+    MODE_WORK,
+    MODE_WIDGETS
+} DesktopMode;
+
+DesktopMode get_current_desktop_mode(void);
+void set_current_desktop_mode(DesktopMode mode);
+char* get_current_desktop_path(void);
+
 /* Constants */
 #define ICON_SIZE 48
 #define ITEM_WIDTH 80

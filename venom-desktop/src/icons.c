@@ -23,6 +23,48 @@ void ensure_config_dir(void) {
     g_mkdir_with_parents("/home/x/.config/venom", 0755);
 }
 
+#define MODE_CONFIG_FILE "/home/x/.config/venom/desktop-mode"
+
+DesktopMode get_current_desktop_mode(void) {
+    char *contents = NULL;
+    gsize length = 0;
+    if (g_file_get_contents(MODE_CONFIG_FILE, &contents, &length, NULL)) {
+        if (g_str_has_prefix(contents, "work")) {
+            g_free(contents);
+            return MODE_WORK;
+        } else if (g_str_has_prefix(contents, "widgets")) {
+            g_free(contents);
+            return MODE_WIDGETS;
+        }
+        g_free(contents);
+    }
+    return MODE_NORMAL;
+}
+
+void set_current_desktop_mode(DesktopMode mode) {
+    ensure_config_dir();
+    const char *str = "normal";
+    if (mode == MODE_WORK) str = "work";
+    else if (mode == MODE_WIDGETS) str = "widgets";
+    g_file_set_contents(MODE_CONFIG_FILE, str, -1, NULL);
+}
+
+char* get_current_desktop_path(void) {
+    DesktopMode mode = get_current_desktop_mode();
+    if (mode == MODE_WIDGETS) {
+        return NULL;
+    }
+    const char *home = g_get_home_dir();
+    if (mode == MODE_WORK) {
+        char *work_path = g_strdup_printf("%s/Work", home);
+        if (!g_file_test(work_path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR)) {
+            g_mkdir_with_parents(work_path, 0755);
+        }
+        return work_path;
+    }
+    return g_strdup_printf("%s/Desktop", home);
+}
+
 void save_item_position(const char *filename, int x, int y) {
     ensure_config_dir();
     GKeyFile *key_file = g_key_file_new();
@@ -190,12 +232,18 @@ void on_bg_drag_data_received(GtkWidget *widget, GdkDragContext *context, gint x
     }
 
     /* Case 2: External Drop (Importing files) */
+    char *desktop_path = get_current_desktop_path();
+    if (!desktop_path) {
+        gtk_drag_finish(context, FALSE, FALSE, time);
+        return;
+    }
+
     gchar **uris = g_uri_list_extract_uris((const gchar *)gtk_selection_data_get_data(data));
     if (uris) {
         for (int i = 0; uris[i] != NULL; i++) {
             GFile *src = g_file_new_for_uri(uris[i]);
             char *basename = g_file_get_basename(src);
-            char *dest_path = g_strdup_printf("%s/Desktop/%s", g_get_home_dir(), basename);
+            char *dest_path = g_strdup_printf("%s/%s", desktop_path, basename);
             GFile *dest = g_file_new_for_path(dest_path);
             
             GError *err = NULL;
@@ -214,6 +262,7 @@ void on_bg_drag_data_received(GtkWidget *widget, GdkDragContext *context, gint x
         g_strfreev(uris);
         refresh_icons();
     }
+    g_free(desktop_path);
     gtk_drag_finish(context, TRUE, FALSE, time);
 }
 
@@ -301,8 +350,9 @@ void refresh_icons(void) {
         gtk_widget_destroy(GTK_WIDGET(iter->data));
     g_list_free(children);
     
-    const char *home = g_get_home_dir();
-    char *desktop_path = g_strdup_printf("%s/Desktop", home);
+    char *desktop_path = get_current_desktop_path();
+    if (!desktop_path) return;
+    
     GFile *dir = g_file_new_for_path(desktop_path);
     
     GFileEnumerator *enumerator = g_file_enumerate_children(dir,
