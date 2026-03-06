@@ -1,0 +1,24 @@
+signal time=1772790193.315472 sender=org.freedesktop.DBus -> destination=:1.307 serial=2 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=NameAcquired
+   string ":1.307"
+signal time=1772790193.315534 sender=org.freedesktop.DBus -> destination=:1.307 serial=4 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=NameLost
+   string ":1.307"
+signal time=1772790201.993062 sender=:1.282 -> destination=(null destination) serial=161 path=/org/mpris/MediaPlayer2; interface=org.freedesktop.DBus.Properties; member=PropertiesChanged
+   string "org.mpris.MediaPlayer2.Player"
+   array [
+      dict entry(
+         string "Rate"
+         variant             double 1
+      )
+   ]
+   array [
+   ]
+signal time=1772790201.993446 sender=:1.282 -> destination=(null destination) serial=163 path=/org/mpris/MediaPlayer2; interface=org.freedesktop.DBus.Properties; member=PropertiesChanged
+   string "org.mpris.MediaPlayer2.Player"
+   array [
+      dict entry(
+         string "PlaybackStatus"
+         variant             string "Playing"
+      )
+   ]
+   array [
+   ]

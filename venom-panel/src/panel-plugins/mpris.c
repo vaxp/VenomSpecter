@@ -84,14 +84,14 @@ static void update_ui(MprisData *data) {
     
     gtk_widget_show_all(data->box);
     
-    GtkWidget *icon = gtk_bin_get_child(GTK_BIN(data->btn_play));
-    if (icon && GTK_IS_IMAGE(icon)) {
-        if (data->is_playing) {
-            gtk_image_set_from_icon_name(GTK_IMAGE(icon), "media-playback-pause-symbolic", GTK_ICON_SIZE_BUTTON);
-        } else {
-            gtk_image_set_from_icon_name(GTK_IMAGE(icon), "media-playback-start-symbolic", GTK_ICON_SIZE_BUTTON);
-        }
+    /* Update play/pause icon */
+    GtkWidget *new_icon;
+    if (data->is_playing) {
+        new_icon = gtk_image_new_from_icon_name("media-playback-pause-symbolic", GTK_ICON_SIZE_BUTTON);
+    } else {
+        new_icon = gtk_image_new_from_icon_name("media-playback-start-symbolic", GTK_ICON_SIZE_BUTTON);
     }
+    gtk_button_set_image(GTK_BUTTON(data->btn_play), new_icon);
     
     if (data->song_title && data->song_artist && strlen(data->song_artist) > 0) {
         snprintf(data->scroll_text, sizeof(data->scroll_text), "%s - %s    ", data->song_artist, data->song_title);
@@ -245,17 +245,24 @@ static void scan_players_and_update(MprisData *data) {
             if (prop_res) {
                 GVariant *v_val;
                 g_variant_get(prop_res, "(v)", &v_val);
-                if (g_variant_is_of_type(v_val, G_VARIANT_TYPE_STRING)) {
-                    const gchar *status = g_variant_get_string(v_val, NULL);
+                
+                GVariant *unboxed = v_val;
+                if (g_variant_is_of_type(v_val, G_VARIANT_TYPE_VARIANT)) {
+                    unboxed = g_variant_get_variant(v_val);
+                    g_variant_unref(v_val);
+                }
+                
+                if (g_variant_is_of_type(unboxed, G_VARIANT_TYPE_STRING)) {
+                    const gchar *status = g_variant_get_string(unboxed, NULL);
                     if (g_strcmp0(status, "Playing") == 0) {
                         best_player = g_strdup(name);
-                        g_variant_unref(v_val);
+                        g_variant_unref(unboxed);
                         g_variant_unref(prop_res);
                         g_free(name);
                         break;
                     }
                 }
-                g_variant_unref(v_val);
+                g_variant_unref(unboxed);
                 g_variant_unref(prop_res);
             }
             if (!fallback_player) fallback_player = g_strdup(name);
@@ -292,8 +299,56 @@ static void on_dbus_signal(GDBusConnection *connection,
                            const gchar *signal_name,
                            GVariant *parameters,
                            gpointer user_data) {
-    (void)connection; (void)sender_name; (void)object_path; (void)interface_name; (void)signal_name; (void)parameters;
+    (void)connection; (void)sender_name; (void)object_path; (void)interface_name; (void)signal_name;
     MprisData *data = (MprisData*)user_data;
+    
+    if (g_strcmp0(signal_name, "PropertiesChanged") == 0) {
+        if (data->active_player && g_strcmp0(sender_name, data->active_player) == 0) {
+            /* We received an update for our currently active player */
+            const gchar *iface;
+            GVariant *changed_props;
+            GVariant *invalidated;
+            
+            g_variant_get(parameters, "(&s@a{sv}@as)", &iface, &changed_props, &invalidated);
+            if (g_strcmp0(iface, "org.mpris.MediaPlayer2.Player") == 0) {
+                GVariantIter *iter;
+                g_variant_get(changed_props, "a{sv}", &iter);
+                const gchar *key;
+                GVariant *value;
+                gboolean metadata_changed = FALSE;
+                
+                while (g_variant_iter_loop(iter, "{&sv}", &key, &value)) {
+                    if (g_strcmp0(key, "PlaybackStatus") == 0) {
+                        GVariant *unboxed = value;
+                        if (g_variant_is_of_type(value, G_VARIANT_TYPE_VARIANT)) {
+                            unboxed = g_variant_get_variant(value);
+                        }
+                        if (g_variant_is_of_type(unboxed, G_VARIANT_TYPE_STRING)) {
+                            const gchar *status = g_variant_get_string(unboxed, NULL);
+                            data->is_playing = (g_strcmp0(status, "Playing") == 0);
+                        }
+                        if (unboxed != value) g_variant_unref(unboxed);
+                    }
+                    else if (g_strcmp0(key, "Metadata") == 0) {
+                        metadata_changed = TRUE;
+                    }
+                }
+                g_variant_iter_free(iter);
+                
+                if (metadata_changed) {
+                    /* If metadata changed, it's easier to just do a full GetAll to refresh title/artist */
+                    get_mpris_properties(data);
+                } else {
+                    update_ui(data);
+                }
+            }
+            g_variant_unref(changed_props);
+            g_variant_unref(invalidated);
+            return;
+        }
+    }
+    
+    /* Fallback: if we get a signal and it's not handled above, scan */
     scan_players_and_update(data);
 }
 
