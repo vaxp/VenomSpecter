@@ -115,7 +115,7 @@ static gboolean on_scroll_tick(gpointer user_data) {
     size_t len = strlen(data->scroll_text);
     if (len == 0) return G_SOURCE_CONTINUE;
     
-    int display_len = 20; 
+    int display_len = 25; /* Fixed max chars to show in marquee */
     if ((int)len <= display_len) {
         gtk_label_set_text(GTK_LABEL(data->lbl_title), data->scroll_text);
         return G_SOURCE_CONTINUE;
@@ -431,7 +431,10 @@ static GtkWidget* create_mpris_widget(void) {
     gtk_box_pack_start(GTK_BOX(data->box), data->btn_next, FALSE, FALSE, 0);
     
     data->lbl_title = gtk_label_new("");
-    gtk_widget_set_size_request(data->lbl_title, 120, -1); 
+    /* Force a strict fixed width so long titles don't push panel buttons */
+    gtk_label_set_ellipsize(GTK_LABEL(data->lbl_title), PANGO_ELLIPSIZE_END);
+    gtk_label_set_width_chars(GTK_LABEL(data->lbl_title), 25);
+    gtk_label_set_max_width_chars(GTK_LABEL(data->lbl_title), 25);
     gtk_label_set_xalign(GTK_LABEL(data->lbl_title), 0.0);
     gtk_box_pack_start(GTK_BOX(data->box), data->lbl_title, FALSE, FALSE, 4);
     
