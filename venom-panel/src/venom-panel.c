@@ -6,12 +6,15 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <dlfcn.h>
+#include <glib-unix.h>
 
 /* Headers (Assumed present in your project) */
 #include "venom-panel.h"
 #include "clock-widget.h"
 #include "system-icons.h"
 #include "control-center.h"
+#include "venom-panel-plugin-api.h"
 
 #include "sni-client.h"
 #include "shot-client.h"
@@ -27,6 +30,188 @@ static GtkWidget *power_profile_label = NULL;
 static GtkWidget *power_actions_box = NULL;
 
 
+
+/* =====================================================================
+ * 0. CONFIG-DRIVEN LAYOUT ENGINE
+ * ===================================================================== */
+
+#define PANEL_PLUGINS_DIR  "/home/x/.config/venom/panel-plugins"
+#define PANEL_CONFIG_FILE  "/home/x/.config/venom/panel.conf"
+#define PANEL_CONFIG_DIR   "/home/x/.config/venom"
+
+typedef enum {
+    ITEM_TYPE_PLUGIN,
+    ITEM_TYPE_BUILTIN,
+    ITEM_TYPE_SPACER,
+    ITEM_TYPE_SEPARATOR,
+} PanelItemType;
+
+typedef struct {
+    PanelItemType  type;
+    char           file[256];
+    char           name[64];
+    gboolean       expand;
+    int            padding;
+} PanelItem;
+
+static void write_default_config(void) {
+    g_mkdir_with_parents(PANEL_CONFIG_DIR, 0755);
+    const char *cfg =
+        "# venom-panel layout — edit and restart to apply changes\n"
+        "# Types: plugin, builtin, spacer, separator\n"
+        "# Builtins: tray, power, system-icons, clock, control-center\n"
+        "\n"
+        "[item]\ntype=plugin\nfile=launcher.so\nexpand=false\npadding=4\n"
+        "\n"
+        "[item]\ntype=spacer\nexpand=true\npadding=0\n"
+        "\n"
+        "[item]\ntype=builtin\nname=tray\nexpand=false\npadding=4\n"
+        "\n"
+        "[item]\ntype=separator\n"
+        "\n"
+        "[item]\ntype=builtin\nname=power\nexpand=false\npadding=2\n"
+        "\n"
+        "[item]\ntype=separator\n"
+        "\n"
+        "[item]\ntype=builtin\nname=system-icons\nexpand=false\npadding=2\n"
+        "\n"
+        "[item]\ntype=builtin\nname=clock\nexpand=false\npadding=4\n"
+        "\n"
+        "[item]\ntype=separator\n"
+        "\n"
+        "[item]\ntype=builtin\nname=control-center\nexpand=false\npadding=2\n";
+    g_file_set_contents(PANEL_CONFIG_FILE, cfg, -1, NULL);
+    g_print("[Panel] Created default config at %s\n", PANEL_CONFIG_FILE);
+}
+
+static GArray* parse_panel_config(void) {
+    if (!g_file_test(PANEL_CONFIG_FILE, G_FILE_TEST_EXISTS))
+        write_default_config();
+
+    GArray *items = g_array_new(FALSE, TRUE, sizeof(PanelItem));
+    char *contents = NULL;
+    gsize length = 0;
+    if (!g_file_get_contents(PANEL_CONFIG_FILE, &contents, &length, NULL)) {
+        g_warning("[Panel] Could not read %s", PANEL_CONFIG_FILE);
+        return items;
+    }
+
+    PanelItem cur;
+    memset(&cur, 0, sizeof(cur));
+    cur.expand = FALSE; cur.padding = 2;
+    gboolean in_item = FALSE;
+
+    char **lines = g_strsplit(contents, "\n", -1);
+    for (int i = 0; lines[i]; i++) {
+        char *line = g_strstrip(lines[i]);
+        if (line[0] == '#' || line[0] == '\0') continue;
+        if (g_strcmp0(line, "[item]") == 0) {
+            if (in_item) g_array_append_val(items, cur);
+            memset(&cur, 0, sizeof(cur));
+            cur.expand = FALSE; cur.padding = 2;
+            in_item = TRUE; continue;
+        }
+        if (!in_item) continue;
+        char **kv = g_strsplit(line, "=", 2);
+        if (!kv[0] || !kv[1]) { g_strfreev(kv); continue; }
+        char *k = g_strstrip(kv[0]), *v = g_strstrip(kv[1]);
+        if      (!g_strcmp0(k,"type"))    {
+            if      (!g_strcmp0(v,"plugin"))    cur.type = ITEM_TYPE_PLUGIN;
+            else if (!g_strcmp0(v,"builtin"))   cur.type = ITEM_TYPE_BUILTIN;
+            else if (!g_strcmp0(v,"spacer"))    cur.type = ITEM_TYPE_SPACER;
+            else if (!g_strcmp0(v,"separator")) cur.type = ITEM_TYPE_SEPARATOR;
+        }
+        else if (!g_strcmp0(k,"file"))    strncpy(cur.file, v, sizeof(cur.file)-1);
+        else if (!g_strcmp0(k,"name"))    strncpy(cur.name, v, sizeof(cur.name)-1);
+        else if (!g_strcmp0(k,"expand"))  cur.expand  = !g_strcmp0(v,"true");
+        else if (!g_strcmp0(k,"padding")) cur.padding = atoi(v);
+        g_strfreev(kv);
+    }
+    if (in_item) g_array_append_val(items, cur);
+    g_strfreev(lines);
+    g_free(contents);
+    return items;
+}
+
+/* Forward declarations for builtin builders (defined after create_venom_panel) */
+static GtkWidget* build_builtin_tray(GtkWidget *hbox);
+static GtkWidget* build_builtin_power(void);
+static GtkWidget* build_builtin_system_icons(void);
+static GtkWidget* build_builtin_clock(void);
+static GtkWidget* build_builtin_control_center(void);
+
+static void load_items_from_config(GtkWidget *hbox) {
+    GArray *items = parse_panel_config();
+    g_mkdir_with_parents(PANEL_PLUGINS_DIR, 0755);
+
+    for (guint i = 0; i < items->len; i++) {
+        PanelItem *item = &g_array_index(items, PanelItem, i);
+        GtkWidget *widget = NULL;
+        gboolean expand  = item->expand;
+        int      padding = item->padding;
+
+        switch (item->type) {
+            case ITEM_TYPE_SPACER:
+                widget = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+                expand = TRUE;
+                break;
+            case ITEM_TYPE_SEPARATOR:
+                widget = gtk_separator_new(GTK_ORIENTATION_VERTICAL);
+                gtk_widget_set_margin_top(widget, 6);
+                gtk_widget_set_margin_bottom(widget, 6);
+                expand = FALSE; padding = 4;
+                break;
+            case ITEM_TYPE_BUILTIN:
+                if      (!g_strcmp0(item->name,"tray"))           widget = build_builtin_tray(hbox);
+                else if (!g_strcmp0(item->name,"power"))          widget = build_builtin_power();
+                else if (!g_strcmp0(item->name,"system-icons"))   widget = build_builtin_system_icons();
+                else if (!g_strcmp0(item->name,"clock"))          widget = build_builtin_clock();
+                else if (!g_strcmp0(item->name,"control-center")) widget = build_builtin_control_center();
+                else g_warning("[Panel] Unknown builtin: '%s'", item->name);
+                break;
+            case ITEM_TYPE_PLUGIN: {
+                char *fp = g_strdup_printf("%s/%s", PANEL_PLUGINS_DIR, item->file);
+                void *h = dlopen(fp, RTLD_NOW | RTLD_LOCAL);
+                if (!h) { 
+                    g_warning("[Panel] dlopen %s: %s", item->file, dlerror());
+                    /* Graceful fallback: show a warning icon instead of crashing */
+                    GtkWidget *warn = gtk_image_new_from_icon_name("dialog-warning-symbolic", GTK_ICON_SIZE_MENU);
+                    gtk_widget_set_tooltip_text(warn, g_strdup_printf("Plugin missing or crashed: %s", item->file));
+                    widget = warn;
+                } else {
+                    VenomPanelPluginInitFn fn = (VenomPanelPluginInitFn)dlsym(h, "venom_panel_plugin_init");
+                    if (!fn) { 
+                        g_warning("[Panel] No init in %s", item->file); 
+                        dlclose(h);
+                        GtkWidget *warn = gtk_image_new_from_icon_name("dialog-error-symbolic", GTK_ICON_SIZE_MENU);
+                        gtk_widget_set_tooltip_text(warn, g_strdup_printf("Invalid plugin: %s", item->file));
+                        widget = warn;
+                    } else {
+                        VenomPanelPluginAPI *api = fn();
+                        if (api && api->create_widget) {
+                            widget = api->create_widget();
+                            if (!widget) {
+                                GtkWidget *warn = gtk_image_new_from_icon_name("dialog-error-symbolic", GTK_ICON_SIZE_MENU);
+                                gtk_widget_set_tooltip_text(warn, g_strdup_printf("Plugin %s failed to create UI", api->name));
+                                widget = warn;
+                            } else {
+                                g_print("[Panel] Plugin '%s' loaded (expand=%d pad=%d)\n", api->name, expand, padding);
+                            }
+                        }
+                    }
+                }
+                g_free(fp);
+                break;
+            }
+        }
+
+        if (widget) {
+            gtk_box_pack_start(GTK_BOX(hbox), widget, expand, expand, padding);
+            gtk_widget_show_all(widget);
+        }
+    }
+    g_array_free(items, TRUE);
+}
 
 /* =====================================================================
  * 4. PANEL SETUP
@@ -79,14 +264,62 @@ static void on_panel_realize(GtkWidget *widget, gpointer data) {
 }
 
 /* Called when a monitor is added/removed or its resolution changes */
-static void on_monitors_changed(GdkDisplay *display, gpointer user_data) {
-    update_panel_geometry(GTK_WINDOW(user_data), display);
-}
-
-/* Fallback for older window managers that fire size-changed on GdkScreen */
 static void on_screen_size_changed(GdkScreen *screen, gpointer user_data) {
     GdkDisplay *display = gdk_screen_get_display(screen);
     update_panel_geometry(GTK_WINDOW(user_data), display);
+}
+
+/* Global reference to the main hbox so we can reload it on signal */
+static GtkWidget *g_panel_hbox = NULL;
+
+static gboolean on_panel_sigusr1(gpointer user_data) {
+    (void)user_data;
+    g_print("[Panel] Received reload signal! Reloading config...\n");
+    if (g_panel_hbox) {
+        /* Destroy all current children */
+        GList *children = gtk_container_get_children(GTK_CONTAINER(g_panel_hbox));
+        for (GList *iter = children; iter != NULL; iter = g_list_next(iter)) {
+            gtk_widget_destroy(GTK_WIDGET(iter->data));
+        }
+        g_list_free(children);
+        /* Reload */
+        load_items_from_config(g_panel_hbox);
+    }
+    return G_SOURCE_CONTINUE;
+}
+
+static void on_menu_preferences(GtkMenuItem *item, gpointer data) {
+    (void)item; (void)data;
+    /* Use the exact known path since this project is in development. 
+     * In production, this would be an installed binary path like /usr/bin/venom-panel-settings */
+    g_spawn_command_line_async("/home/x/Desktop/VenomSpecter/venom-panel/venom-panel-settings", NULL);
+}
+
+static void on_menu_restart(GtkMenuItem *item, gpointer data) {
+    (void)item; (void)data;
+    /* Clean restart using absolute path */
+    g_spawn_command_line_async("bash -c 'pidof venom-panel | xargs kill; nohup /home/x/Desktop/VenomSpecter/venom-panel/venom-panel &'", NULL);
+}
+
+static gboolean on_panel_button_press(GtkWidget *widget, GdkEventButton *event, gpointer data) {
+    (void)widget; (void)data;
+    if (event->type == GDK_BUTTON_PRESS && event->button == 3) {
+        /* Right click -> show Edit Mode context menu */
+        GtkWidget *menu = gtk_menu_new();
+        
+        GtkWidget *item_prefs = gtk_menu_item_new_with_label("Panel Preferences...");
+        g_signal_connect(item_prefs, "activate", G_CALLBACK(on_menu_preferences), NULL);
+        gtk_menu_shell_append(GTK_MENU_SHELL(menu), item_prefs);
+        
+        GtkWidget *item_restart = gtk_menu_item_new_with_label("Restart Panel");
+        g_signal_connect(item_restart, "activate", G_CALLBACK(on_menu_restart), NULL);
+        gtk_menu_shell_append(GTK_MENU_SHELL(menu), item_restart);
+        
+        gtk_widget_show_all(menu);
+        gtk_menu_popup_at_pointer(GTK_MENU(menu), (GdkEvent*)event);
+        return TRUE;
+    }
+    return FALSE;
 }
 
 static void toggle_control_center(GtkWidget *button, gpointer data) {
@@ -102,7 +335,7 @@ static void toggle_control_center(GtkWidget *button, gpointer data) {
 }
 
 /* =====================================================================
- * 5. SYSTEM TRAY LOGIC
+ * 6. SYSTEM TRAY LOGIC
  * ===================================================================== */
 
 static void on_menu_item_activate(GtkMenuItem *menuitem, gpointer data) {
@@ -344,9 +577,8 @@ GtkWidget* create_venom_panel(void) {
     gtk_window_set_default_size(GTK_WINDOW(window), geometry.width, 40);
     gtk_window_move(GTK_WINDOW(window), geometry.x, geometry.y);
 
-    /* Listen for monitor changes (resolution / connect / disconnect) */
-    g_signal_connect(display, "monitors-changed",
-                     G_CALLBACK(on_monitors_changed), window);
+    /* Listen for monitor changes — only use GdkScreen on X11 (GdkX11Display
+     * does not support the monitors-changed signal) */
 
     /* Fallback: GdkScreen::size-changed fires on older WMs */
     GdkScreen *screen_ev = gtk_widget_get_screen(window);
@@ -366,166 +598,22 @@ GtkWidget* create_venom_panel(void) {
     gtk_window_set_skip_pager_hint(GTK_WINDOW(window), TRUE);
 
     g_signal_connect(window, "realize", G_CALLBACK(on_panel_realize), NULL);
-    
-    /* Layout */
+    /* Right click menu handler */
+    g_signal_connect(window, "button-press-event", G_CALLBACK(on_panel_button_press), NULL);
+
+    /* Single horizontal container — items placed by config */
     GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    g_panel_hbox = hbox; /* store for live reload */
+    
     gtk_container_add(GTK_CONTAINER(window), hbox);
-    
-    /* Left Spacer */
-    GtkWidget *l_sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_set_hexpand(l_sp, TRUE);
-    gtk_box_pack_start(GTK_BOX(hbox), l_sp, TRUE, TRUE, 0);
-    
+    gtk_widget_set_margin_start(hbox, 4);
+    gtk_widget_set_margin_end(hbox, 4);
 
-    
-    /* Right Spacer */
-    GtkWidget *r_sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_set_hexpand(r_sp, TRUE);
-    gtk_box_pack_start(GTK_BOX(hbox), r_sp, TRUE, TRUE, 0);
-    
-    /* Right Widgets */
-    GtkWidget *r_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    gtk_widget_set_margin_end(r_box, 12);
+    /* Each builtin widget builder initialises its own client subsystem */
 
-    gtk_box_pack_end(GTK_BOX(hbox), r_box, FALSE, FALSE, 0);
-    
-    /* Recording Stop Button (Hidden by default) */
-    rec_stop_button = gtk_button_new();
-    gtk_button_set_relief(GTK_BUTTON(rec_stop_button), GTK_RELIEF_NONE);
-    gtk_widget_set_tooltip_text(rec_stop_button, "Stop Recording");
-    GtkWidget *rec_icon = gtk_image_new_from_icon_name("media-playback-stop-symbolic", GTK_ICON_SIZE_MENU);
-    gtk_container_add(GTK_CONTAINER(rec_stop_button), rec_icon);
-    
-    /* Style it: maybe red background or red icon? */
-    GtkStyleContext *rec_ctx = gtk_widget_get_style_context(rec_stop_button);
-    gtk_style_context_add_class(rec_ctx, "destructive-action"); /* Assume this class exists or add inline style */
-    
-    /* Apply custom red color just in case */
-    GtkCssProvider *rec_css = gtk_css_provider_new();
-    const char *css_red = "button { color: #ff5555; }"; 
-    gtk_css_provider_load_from_data(rec_css, css_red, -1, NULL);
-    gtk_style_context_add_provider(rec_ctx, GTK_STYLE_PROVIDER(rec_css), 800);
-    
-    g_signal_connect(rec_stop_button, "clicked", G_CALLBACK(on_stop_recording_clicked), NULL);
-    gtk_box_pack_start(GTK_BOX(r_box), rec_stop_button, FALSE, FALSE, 0);
-    /* Ensure it's hidden initially */
-    /* gtk_widget_show_all checks visibility prop, but we will manage it manually */
-    gtk_widget_set_no_show_all(rec_stop_button, TRUE);
-    gtk_widget_hide(rec_stop_button);
-    
-    /* Register callback */
-    shot_client_on_recording_state(on_rec_state_changed, NULL);
-    
+    /* Load all items from panel.conf (writes default on first run) */
+    load_items_from_config(hbox);
 
-    
-    /* Tray Area */
-    GtkWidget *tray_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
-    gtk_box_pack_start(GTK_BOX(r_box), tray_box, FALSE, FALSE, 0);
-
-
-    
-    /* Register callback */
-    shot_client_on_recording_state(on_rec_state_changed, NULL);
-
-    /* SNI Init */
-    sni_client_init();
-    
-    sni_client_on_item_added(on_tray_item_added, tray_box);
-    sni_client_on_item_removed(on_tray_item_removed, tray_box);
-    
-    /* Initial Fetch */
-    GList *items = sni_client_get_items();
-    for(GList *l=items; l; l=l->next) {
-        on_tray_item_added((TrayItem*)l->data, tray_box);
-        /* Note: on_tray_item_added does not free the item passed to it if we want to reuse logic cleanly,
-           BUT our create_tray_item allocates. on_tray_item_added copies ID. 
-           We should free the item here. */
-    }
-    tray_item_list_free(items);
-    
-    /* --- Power Management UI --- */
-    power_client_init();
-    
-    /* 1. Power Profile Section */
-    GtkWidget *power_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
-    
-    /* Toggle Button */
-    power_profile_btn = gtk_button_new();
-    gtk_button_set_relief(GTK_BUTTON(power_profile_btn), GTK_RELIEF_NONE);
-    GtkWidget *prof_icon = gtk_image_new_from_icon_name("power-profile-balanced-symbolic", GTK_ICON_SIZE_MENU);
-    gtk_container_add(GTK_CONTAINER(power_profile_btn), prof_icon);
-    g_signal_connect(power_profile_btn, "clicked", G_CALLBACK(on_power_profile_clicked), NULL);
-    gtk_box_pack_start(GTK_BOX(power_box), power_profile_btn, FALSE, FALSE, 0);
-    
-    /* Profile Lable */
-    power_profile_label = gtk_label_new("Balanced"); /* value updated by callback */
-    /* Add style class for label */
-    GtkStyleContext *pl_ctx = gtk_widget_get_style_context(power_profile_label);
-    gtk_style_context_add_class(pl_ctx, "power-label");
-    /* Apply some padding */
-    gtk_widget_set_margin_end(power_profile_label, 8);
-    gtk_box_pack_start(GTK_BOX(power_box), power_profile_label, FALSE, FALSE, 0);
-    
-    gtk_box_pack_start(GTK_BOX(r_box), power_box, FALSE, FALSE, 0);
-    
-    /* 2. Power Actions Section */
-    GtkWidget *actions_container = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
-    
-    /* Expanded Actions Box (Hidden) */
-    power_actions_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
-    
-    /* Helper to create action buttons */
-    GtkWidget *btn_shut = gtk_button_new_from_icon_name("system-shutdown-symbolic", GTK_ICON_SIZE_MENU);
-    gtk_button_set_relief(GTK_BUTTON(btn_shut), GTK_RELIEF_NONE);
-    gtk_widget_set_tooltip_text(btn_shut, "Shutdown");
-    g_signal_connect(btn_shut, "clicked", G_CALLBACK(on_power_action_shutdown), NULL);
-    gtk_box_pack_start(GTK_BOX(power_actions_box), btn_shut, FALSE, FALSE, 0);
-    
-    GtkWidget *btn_reb = gtk_button_new_from_icon_name("system-reboot-symbolic", GTK_ICON_SIZE_MENU);
-    gtk_button_set_relief(GTK_BUTTON(btn_reb), GTK_RELIEF_NONE);
-    gtk_widget_set_tooltip_text(btn_reb, "Reboot");
-    g_signal_connect(btn_reb, "clicked", G_CALLBACK(on_power_action_reboot), NULL);
-    gtk_box_pack_start(GTK_BOX(power_actions_box), btn_reb, FALSE, FALSE, 0);
-    
-    GtkWidget *btn_susp = gtk_button_new_from_icon_name("system-suspend-symbolic", GTK_ICON_SIZE_MENU);
-    gtk_button_set_relief(GTK_BUTTON(btn_susp), GTK_RELIEF_NONE);
-    gtk_widget_set_tooltip_text(btn_susp, "Suspend");
-    g_signal_connect(btn_susp, "clicked", G_CALLBACK(on_power_action_suspend), NULL);
-    gtk_box_pack_start(GTK_BOX(power_actions_box), btn_susp, FALSE, FALSE, 0);
-    
-    GtkWidget *btn_lock = gtk_button_new_from_icon_name("system-lock-screen-symbolic", GTK_ICON_SIZE_MENU);
-    gtk_button_set_relief(GTK_BUTTON(btn_lock), GTK_RELIEF_NONE);
-    gtk_widget_set_tooltip_text(btn_lock, "Lock Screen");
-    g_signal_connect(btn_lock, "clicked", G_CALLBACK(on_power_action_lock), NULL);
-    gtk_box_pack_start(GTK_BOX(power_actions_box), btn_lock, FALSE, FALSE, 0);
-    
-    gtk_box_pack_start(GTK_BOX(actions_container), power_actions_box, FALSE, FALSE, 0);
-    gtk_widget_set_no_show_all(power_actions_box, TRUE);
-    gtk_widget_hide(power_actions_box);
-    
-    /* Main Toggle Button */
-    GtkWidget *power_toggle_btn = gtk_button_new_from_icon_name("system-shutdown-symbolic", GTK_ICON_SIZE_MENU);
-    gtk_button_set_relief(GTK_BUTTON(power_toggle_btn), GTK_RELIEF_NONE);
-    gtk_widget_set_tooltip_text(power_toggle_btn, "Power Menu");
-    g_signal_connect(power_toggle_btn, "clicked", G_CALLBACK(on_power_action_toggle), NULL);
-    gtk_box_pack_start(GTK_BOX(actions_container), power_toggle_btn, FALSE, FALSE, 0);
-    
-    gtk_box_pack_start(GTK_BOX(r_box), actions_container, FALSE, FALSE, 0);
-    
-    /* Register Profile Callback */
-    power_client_on_profile_changed(on_power_profile_changed, NULL);
-    power_get_active_profile();
-    
-    gtk_box_pack_start(GTK_BOX(r_box), create_system_icons(), FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(r_box), create_clock_widget(), FALSE, FALSE, 0);
-    
-    GtkWidget *cc_btn = gtk_button_new();
-    gtk_container_add(GTK_CONTAINER(cc_btn), gtk_image_new_from_icon_name("view-grid-symbolic", GTK_ICON_SIZE_LARGE_TOOLBAR));
-    gtk_button_set_relief(GTK_BUTTON(cc_btn), GTK_RELIEF_NONE);
-    gtk_style_context_add_class(gtk_widget_get_style_context(cc_btn), "control-center-button");
-    g_signal_connect(cc_btn, "clicked", G_CALLBACK(toggle_control_center), NULL);
-    gtk_box_pack_start(GTK_BOX(r_box), cc_btn, FALSE, FALSE, 0);
-    
     /* Main CSS */
     GtkCssProvider *p = gtk_css_provider_new();
     gchar *css_p = g_build_filename(g_get_current_dir(), "style.css", NULL);
@@ -533,16 +621,135 @@ GtkWidget* create_venom_panel(void) {
     g_free(css_p);
     gtk_style_context_add_provider_for_screen(gdk_screen_get_default(), GTK_STYLE_PROVIDER(p), 800);
     gtk_style_context_add_class(gtk_widget_get_style_context(window), "venom-panel");
-    
+
     return window;
 }
 
 int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
+
+    /* Set up signal handler for live reload */
+    g_unix_signal_add(SIGUSR1, on_panel_sigusr1, NULL);
+
     GtkWidget *panel = create_venom_panel();
     g_signal_connect(panel, "destroy", G_CALLBACK(power_client_cleanup), NULL);
     g_signal_connect(panel, "destroy", G_CALLBACK(gtk_main_quit), NULL);
     gtk_widget_show_all(panel);
     gtk_main();
     return 0;
+}
+
+/* =====================================================================
+ * BUILTIN WIDGET BUILDERS
+ * Called by load_items_from_config() for type=builtin items.
+ * ===================================================================== */
+
+/* --- Tray --- */
+static GtkWidget* build_builtin_tray(GtkWidget *hbox) {
+    (void)hbox;
+    /* Recording stop button */
+    shot_client_init();   /* must be initialised before registering callback */
+    rec_stop_button = gtk_button_new();
+    gtk_button_set_relief(GTK_BUTTON(rec_stop_button), GTK_RELIEF_NONE);
+    gtk_widget_set_tooltip_text(rec_stop_button, "Stop Recording");
+    GtkWidget *rec_icon = gtk_image_new_from_icon_name("media-playback-stop-symbolic", GTK_ICON_SIZE_MENU);
+    gtk_container_add(GTK_CONTAINER(rec_stop_button), rec_icon);
+    GtkStyleContext *rec_ctx = gtk_widget_get_style_context(rec_stop_button);
+    GtkCssProvider *rec_css = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(rec_css, "button { color: #ff5555; }", -1, NULL);
+    gtk_style_context_add_provider(rec_ctx, GTK_STYLE_PROVIDER(rec_css), 800);
+    g_signal_connect(rec_stop_button, "clicked", G_CALLBACK(on_stop_recording_clicked), NULL);
+    gtk_widget_set_no_show_all(rec_stop_button, TRUE);
+    gtk_widget_hide(rec_stop_button);
+    shot_client_on_recording_state(on_rec_state_changed, NULL);
+
+    /* Tray icons box */
+    GtkWidget *tray_container = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    GtkWidget *tray_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    gtk_box_pack_start(GTK_BOX(tray_container), rec_stop_button, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(tray_container), tray_box, FALSE, FALSE, 0);
+
+    sni_client_init();   /* initialise SNI D-Bus client before querying items */
+    sni_client_on_item_added(on_tray_item_added, tray_box);
+    sni_client_on_item_removed(on_tray_item_removed, tray_box);
+    GList *items = sni_client_get_items();
+    for (GList *l = items; l; l = l->next)
+        on_tray_item_added((TrayItem*)l->data, tray_box);
+    tray_item_list_free(items);
+
+    return tray_container;
+}
+
+/* --- Power --- */
+static GtkWidget* build_builtin_power(void) {
+    power_client_init();  /* safe to call multiple times */
+    GtkWidget *outer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+
+    /* Profile section */
+    GtkWidget *power_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+    power_profile_btn = gtk_button_new();
+    gtk_button_set_relief(GTK_BUTTON(power_profile_btn), GTK_RELIEF_NONE);
+    GtkWidget *prof_icon = gtk_image_new_from_icon_name("power-profile-balanced-symbolic", GTK_ICON_SIZE_MENU);
+    gtk_container_add(GTK_CONTAINER(power_profile_btn), prof_icon);
+    g_signal_connect(power_profile_btn, "clicked", G_CALLBACK(on_power_profile_clicked), NULL);
+    gtk_box_pack_start(GTK_BOX(power_box), power_profile_btn, FALSE, FALSE, 0);
+    power_profile_label = gtk_label_new("balanced");
+    GtkStyleContext *pl_ctx = gtk_widget_get_style_context(power_profile_label);
+    gtk_style_context_add_class(pl_ctx, "power-label");
+    gtk_widget_set_margin_end(power_profile_label, 8);
+    gtk_box_pack_start(GTK_BOX(power_box), power_profile_label, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(outer), power_box, FALSE, FALSE, 0);
+
+    /* Actions section */
+    GtkWidget *actions_container = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+    power_actions_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+
+    struct { const char *icon; const char *tip; GCallback cb; } btns[] = {
+        { "system-shutdown-symbolic", "Shutdown",    G_CALLBACK(on_power_action_shutdown) },
+        { "system-reboot-symbolic",   "Reboot",      G_CALLBACK(on_power_action_reboot)   },
+        { "system-suspend-symbolic",  "Suspend",     G_CALLBACK(on_power_action_suspend)  },
+        { "system-lock-screen-symbolic", "Lock",     G_CALLBACK(on_power_action_lock)     },
+    };
+    for (int i = 0; i < 4; i++) {
+        GtkWidget *b = gtk_button_new_from_icon_name(btns[i].icon, GTK_ICON_SIZE_MENU);
+        gtk_button_set_relief(GTK_BUTTON(b), GTK_RELIEF_NONE);
+        gtk_widget_set_tooltip_text(b, btns[i].tip);
+        g_signal_connect(b, "clicked", btns[i].cb, NULL);
+        gtk_box_pack_start(GTK_BOX(power_actions_box), b, FALSE, FALSE, 0);
+    }
+    gtk_box_pack_start(GTK_BOX(actions_container), power_actions_box, FALSE, FALSE, 0);
+    gtk_widget_set_no_show_all(power_actions_box, TRUE);
+    gtk_widget_hide(power_actions_box);
+
+    GtkWidget *toggle_btn = gtk_button_new_from_icon_name("system-shutdown-symbolic", GTK_ICON_SIZE_MENU);
+    gtk_button_set_relief(GTK_BUTTON(toggle_btn), GTK_RELIEF_NONE);
+    gtk_widget_set_tooltip_text(toggle_btn, "Power Menu");
+    g_signal_connect(toggle_btn, "clicked", G_CALLBACK(on_power_action_toggle), NULL);
+    gtk_box_pack_start(GTK_BOX(actions_container), toggle_btn, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(outer), actions_container, FALSE, FALSE, 0);
+
+    power_client_on_profile_changed(on_power_profile_changed, NULL);
+    power_get_active_profile();
+    return outer;
+}
+
+/* --- System Icons --- */
+static GtkWidget* build_builtin_system_icons(void) {
+    return create_system_icons();
+}
+
+/* --- Clock --- */
+static GtkWidget* build_builtin_clock(void) {
+    return create_clock_widget();
+}
+
+/* --- Control Center --- */
+static GtkWidget* build_builtin_control_center(void) {
+    GtkWidget *cc_btn = gtk_button_new();
+    gtk_container_add(GTK_CONTAINER(cc_btn),
+        gtk_image_new_from_icon_name("view-grid-symbolic", GTK_ICON_SIZE_LARGE_TOOLBAR));
+    gtk_button_set_relief(GTK_BUTTON(cc_btn), GTK_RELIEF_NONE);
+    gtk_style_context_add_class(gtk_widget_get_style_context(cc_btn), "control-center-button");
+    g_signal_connect(cc_btn, "clicked", G_CALLBACK(toggle_control_center), NULL);
+    return cc_btn;
 }

@@ -1,0 +1,420 @@
+[Panel] Plugin 'App Launcher' loaded (expand=0 pad=4)
+[NetworkClient] Connecting to org.venom.Network...
+[NetworkClient] ✅ WiFi proxy connected
+[NetworkClient] ✅ Bluetooth proxy connected
+[NetworkClient] ✅ Ethernet proxy connected
+[NetworkClient] Initialized
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Brightness] Manager Init...
+[Brightness] Initializing D-Bus...
+[Brightness] D-Bus proxy created.
+[Brightness] Checking 'Brightness' property...
+[Brightness] 'Brightness' property not found or null.
+[Brightness] Checking brightnessctl...
+Can't modify brightness: Permission denied
+
+You should run this program with root privileges.
+Alternatively, get write permissions for device files.
+Brightness Manager: brightnessctl found but lacks permissions. Skipping.
+[Brightness] Checking sysfs...
+[Brightness] Checking xrandr...
+Brightness Manager: Using xrandr (output: HDMI-1)
+[NotificationClient] Connecting to org.freedesktop.Notifications...
+[NotificationClient] ✅ Connected to venom_notify
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Ethernet] Checking connection...
+[Ethernet] GetInterfaces failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[NotificationClient] Got 1 notifications
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Panel] Received reload signal! Reloading config...
+[Panel] Plugin 'App Launcher' loaded (expand=0 pad=4)
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:28.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:29.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:30.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:31.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Panel] Received reload signal! Reloading config...
+[Panel] Plugin 'App Launcher' loaded (expand=0 pad=4)
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:32.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:33.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:34.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:35.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:36.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:37.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:38.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:39.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:40.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:41.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:42.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:43.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:44.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:45.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:46.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:47.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:48.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:49.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:50.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Panel] Received reload signal! Reloading config...
+[Panel] Plugin 'App Launcher' loaded (expand=0 pad=4)
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:51.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:52.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:53.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:54.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Panel] Received reload signal! Reloading config...
+[Panel] Plugin 'App Launcher' loaded (expand=0 pad=4)
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:55.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:55.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:55.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:55.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:56.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:56.067: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:56.067: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:56.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Panel] Received reload signal! Reloading config...
+[Panel] Plugin 'App Launcher' loaded (expand=0 pad=4)
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:57.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:57.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:57.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:57.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:58.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:58.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:58.067: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:58.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:59.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:59.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:59.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:18:59.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:00.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:00.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:00.067: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:00.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Panel] Received reload signal! Reloading config...
+[Panel] Plugin 'App Launcher' loaded (expand=0 pad=4)
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:01.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:01.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:01.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:01.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Panel] Received reload signal! Reloading config...
+[Panel] Plugin 'App Launcher' loaded (expand=0 pad=4)
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:02.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:02.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:02.067: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:02.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:02.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:03.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:03.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:03.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:03.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:03.069: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:04.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:04.067: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:04.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:04.069: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:04.069: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Panel] Received reload signal! Reloading config...
+[Panel] Plugin 'App Launcher' loaded (expand=0 pad=4)
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:05.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:05.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:05.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:05.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:05.067: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:05.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:06.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:06.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:06.067: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:06.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:06.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:06.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:07.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:07.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:07.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:07.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:07.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:07.069: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:08.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:08.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:08.067: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:08.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:08.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:08.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Panel] Received reload signal! Reloading config...
+[Panel] Plugin 'App Launcher' loaded (expand=0 pad=4)
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:09.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:09.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:09.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:09.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:09.067: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:09.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:10.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:10.067: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:10.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:10.069: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:10.069: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:10.069: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:11.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:11.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:11.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:11.065: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:11.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:11.069: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:12.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:12.067: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:12.068: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:12.069: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:12.069: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:12.069: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Panel] Received reload signal! Reloading config...
+[Panel] Plugin 'App Launcher' loaded (expand=0 pad=4)
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:13.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:13.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:13.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:130571): Gtk-CRITICAL **: 08:19:13.066: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+venom-panel: no process found
