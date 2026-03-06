@@ -1,5 +1,6 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
+#include <gio/gdesktopappinfo.h>
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
@@ -75,34 +76,55 @@ static char* get_x11_prop_string(Display *dpy, Window win, const char *prop_name
 
 /* Check if window is a normal app window (not a dock, desktop, etc) */
 static gboolean is_normal_window(Display *dpy, Window win) {
-    /* Fast basic check */
     XWindowAttributes attrs;
     if (!XGetWindowAttributes(dpy, win, &attrs)) return FALSE;
-    if (attrs.map_state != IsViewable) return FALSE;
     
+    /* We cannot rely purely on IsViewable because minimized windows are Unmapped.
+       Instead, we filter out explicitly hidden windows and override_redirects. */
+    if (attrs.override_redirect) return FALSE;
+
+    /* Check _NET_WM_STATE for SKIP_TASKBAR */
+    Atom state_prop = XInternAtom(dpy, "_NET_WM_STATE", True);
+    Atom skip_taskbar = XInternAtom(dpy, "_NET_WM_STATE_SKIP_TASKBAR", True);
+    if (state_prop != None && skip_taskbar != None) {
+        Atom actual_type; int actual_format; unsigned long nitems; unsigned long bytes_after;
+        unsigned char *prop_retval = NULL;
+        if (XGetWindowProperty(dpy, win, state_prop, 0, 1024, False, XA_ATOM,
+                               &actual_type, &actual_format, &nitems, &bytes_after, &prop_retval) == Success && prop_retval) {
+            Atom *atoms = (Atom*)prop_retval;
+            gboolean skip = FALSE;
+            for (unsigned long i = 0; i < nitems; i++) {
+                if (atoms[i] == skip_taskbar) { skip = TRUE; break; }
+            }
+            XFree(prop_retval);
+            if (skip) return FALSE;
+        } else if (prop_retval) {
+            XFree(prop_retval);
+        }
+    }
+
     /* Check _NET_WM_WINDOW_TYPE */
-    Atom prop = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE", True);
-    if (prop == None) return TRUE; /* Assume normal if not using EWMH heavily */
+    Atom type_prop = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE", True);
+    if (type_prop == None) return TRUE; 
     
     Atom normal = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_NORMAL", True);
     Atom dialog = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DIALOG", True);
     Atom dock = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DOCK", True);
     Atom desktop = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DESKTOP", True);
+    Atom utility = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_UTILITY", True);
     
     Atom actual_type; int actual_format; unsigned long nitems; unsigned long bytes_after;
     unsigned char *prop_retval = NULL;
     
-    int status = XGetWindowProperty(dpy, win, prop, 0, 1024, False, XA_ATOM,
-                                    &actual_type, &actual_format, &nitems, &bytes_after, &prop_retval);
-                                    
-    if (status == Success && prop_retval && actual_format == 32) {
+    if (XGetWindowProperty(dpy, win, type_prop, 0, 1024, False, XA_ATOM,
+                           &actual_type, &actual_format, &nitems, &bytes_after, &prop_retval) == Success && prop_retval && actual_format == 32) {
         Atom *atoms = (Atom*)prop_retval;
         gboolean is_normal = FALSE;
         gboolean is_dock = FALSE;
         
         for (unsigned long i = 0; i < nitems; i++) {
             if (atoms[i] == normal || atoms[i] == dialog) is_normal = TRUE;
-            if (atoms[i] == dock || atoms[i] == desktop) is_dock = TRUE;
+            if (atoms[i] == dock || atoms[i] == desktop || atoms[i] == utility) is_dock = TRUE;
         }
         XFree(prop_retval);
         
@@ -112,8 +134,7 @@ static gboolean is_normal_window(Display *dpy, Window win) {
         XFree(prop_retval);
     }
     
-    /* If no type is specified, usually treat it as normal if it's not override redirect */
-    return !attrs.override_redirect;
+    return TRUE;
 }
 
 static void activate_window(Display *dpy, Window root, Window win) {
@@ -165,14 +186,12 @@ static char* get_wm_class(Display *dpy, Window win) {
     memset(&hint, 0, sizeof(hint));
     if (XGetClassHint(dpy, win, &hint)) {
         char *res = NULL;
-        /* Usually the res_name matches icon names better than res_class */
         if (hint.res_name) res = g_strdup(hint.res_name);
         else if (hint.res_class) res = g_strdup(hint.res_class);
         
         if (hint.res_name) XFree(hint.res_name);
         if (hint.res_class) XFree(hint.res_class);
         
-        /* Make it lowercase as most icons are lowercase */
         if (res) {
             for (int i = 0; res[i]; i++) res[i] = g_ascii_tolower(res[i]);
         }
@@ -180,6 +199,96 @@ static char* get_wm_class(Display *dpy, Window win) {
     }
     return NULL;
 }
+
+static GdkPixbuf* get_window_icon(Display *dpy, Window xwindow, const char *class_name) {
+    Atom actual_type;
+    int actual_format;
+    unsigned long nitems, bytes_after;
+    unsigned char *prop = NULL;
+    GdkPixbuf *pixbuf = NULL;
+
+    /* Method 1: Try _NET_WM_ICON (modern EWMH standard, raw pixels) */
+    Atom net_wm_icon = XInternAtom(dpy, "_NET_WM_ICON", False);
+    if (XGetWindowProperty(dpy, xwindow, net_wm_icon, 0, 65536, False,
+                           XA_CARDINAL, &actual_type, &actual_format, &nitems, &bytes_after, &prop) == Success) {
+        if (prop && actual_format == 32 && nitems > 2) {
+            unsigned long *data = (unsigned long *)prop;
+            int width = data[0];
+            int height = data[1];
+            int size = width * height;
+
+            if (nitems >= (unsigned long)(size + 2) && width > 0 && height > 0 && width < 512 && height < 512) {
+                pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, width, height);
+                guchar *pixels = gdk_pixbuf_get_pixels(pixbuf);
+
+                for (int i = 0; i < size; i++) {
+                    unsigned long argb = data[i + 2];
+                    pixels[i * 4 + 0] = (argb >> 16) & 0xFF;
+                    pixels[i * 4 + 1] = (argb >> 8) & 0xFF;
+                    pixels[i * 4 + 2] = argb & 0xFF;
+                    pixels[i * 4 + 3] = (argb >> 24) & 0xFF;
+                }
+            }
+            XFree(prop);
+            if (pixbuf != NULL) {
+                GdkPixbuf *scaled = gdk_pixbuf_scale_simple(pixbuf, 24, 24, GDK_INTERP_BILINEAR);
+                g_object_unref(pixbuf);
+                return scaled;
+            }
+        } else if (prop) {
+            XFree(prop);
+        }
+    }
+
+    /* Method 2: Try GDesktopAppInfo to locate the exact themed icon via WM_CLASS */
+    GtkIconTheme *icon_theme = gtk_icon_theme_get_default();
+    GError *error = NULL;
+    
+    if (class_name) {
+        GDesktopAppInfo *app_info = NULL;
+        
+        gchar *desktop_id = g_strdup_printf("%s.desktop", class_name);
+        app_info = g_desktop_app_info_new(desktop_id);
+        g_free(desktop_id);
+        
+        if (!app_info) {
+            gchar ***desktop_ids = g_desktop_app_info_search(class_name);
+            if (desktop_ids != NULL && desktop_ids[0] != NULL) {
+                app_info = g_desktop_app_info_new(desktop_ids[0][0]);
+            }
+            if (desktop_ids != NULL) {
+                for (gchar ***p = desktop_ids; *p != NULL; p++) g_strfreev(*p);
+                g_free(desktop_ids);
+            }
+        }
+        
+        if (app_info) {
+            gchar *icon_name = g_desktop_app_info_get_string(app_info, "Icon");
+            if (icon_name) {
+                if (g_path_is_absolute(icon_name)) {
+                    pixbuf = gdk_pixbuf_new_from_file_at_scale(icon_name, 24, 24, TRUE, &error);
+                } else {
+                    pixbuf = gtk_icon_theme_load_icon(icon_theme, icon_name, 24, GTK_ICON_LOOKUP_FORCE_SIZE, &error);
+                }
+                g_free(icon_name);
+                if (error) { g_error_free(error); error = NULL; }
+            }
+            g_object_unref(app_info);
+            if (pixbuf) return pixbuf;
+        }
+        
+        /* Direct class name lookup fallback */
+        pixbuf = gtk_icon_theme_load_icon(icon_theme, class_name, 24, GTK_ICON_LOOKUP_FORCE_SIZE, &error);
+        if (error) { g_error_free(error); error = NULL; }
+        if (pixbuf) return pixbuf;
+    }
+    
+    /* Method 3: Generic fallback */
+    pixbuf = gtk_icon_theme_load_icon(icon_theme, "application-x-executable", 24, GTK_ICON_LOOKUP_FORCE_SIZE, &error);
+    if (error) { g_error_free(error); error = NULL; }
+    return pixbuf;
+}
+
 
 static void on_task_clicked(GtkButton *btn, gpointer user_data) {
     TasklistData *data = (TasklistData*)user_data;
@@ -286,19 +395,15 @@ static void rebuild_tasklist(TasklistData *data) {
         gtk_widget_set_size_request(btn, 36, 36); /* Square icon button */
         
         char *wm_class = get_wm_class(data->dpy, win);
-        GtkIconTheme *theme = gtk_icon_theme_get_default();
-        const char *icon_name = "application-x-executable"; /* Fallback */
+        GdkPixbuf *pixbuf = get_window_icon(data->dpy, win, wm_class);
         
-        if (wm_class && gtk_icon_theme_has_icon(theme, wm_class)) {
-            icon_name = wm_class;
-        } else if (wm_class) {
-            /* Try typical gnome naming fallback e.g. Org.gnome.Terminal -> terminal */
-            if (strstr(wm_class, "terminal")) icon_name = "utilities-terminal";
-            else if (strstr(wm_class, "browser")) icon_name = "web-browser";
-            else if (strstr(wm_class, "file")) icon_name = "system-file-manager";
+        GtkWidget *icon;
+        if (pixbuf) {
+            icon = gtk_image_new_from_pixbuf(pixbuf);
+            g_object_unref(pixbuf);
+        } else {
+            icon = gtk_image_new_from_icon_name("application-x-executable", GTK_ICON_SIZE_LARGE_TOOLBAR);
         }
-        
-        GtkWidget *icon = gtk_image_new_from_icon_name(icon_name, GTK_ICON_SIZE_LARGE_TOOLBAR);
         gtk_container_add(GTK_CONTAINER(btn), icon);
         
         /* Add tooltip with full name */
