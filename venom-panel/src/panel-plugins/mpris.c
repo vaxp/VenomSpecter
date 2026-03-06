@@ -112,35 +112,28 @@ static gboolean on_scroll_tick(gpointer user_data) {
     if (!GTK_IS_WIDGET(data->lbl_title)) return G_SOURCE_REMOVE;
     if (!data->active_player) return G_SOURCE_CONTINUE;
     
-    size_t len = strlen(data->scroll_text);
-    if (len == 0) return G_SOURCE_CONTINUE;
+    glong char_len = g_utf8_strlen(data->scroll_text, -1);
+    if (char_len == 0) return G_SOURCE_CONTINUE;
     
     int display_len = 25; /* Fixed max chars to show in marquee */
-    if ((int)len <= display_len) {
+    if (char_len <= display_len) {
         gtk_label_set_text(GTK_LABEL(data->lbl_title), data->scroll_text);
         return G_SOURCE_CONTINUE;
     }
     
-    char display_str[64] = {0};
-    int j = 0;
-    for (int i = 0; i < display_len && j < 63; i++) {
-        int idx = (data->scroll_offset + i) % len;
-        
-        if ((data->scroll_text[idx] & 0xC0) == 0x80) {
-            while ((data->scroll_text[idx] & 0xC0) == 0x80) {
-                data->scroll_offset = (data->scroll_offset + 1) % len;
-                idx = (data->scroll_offset + i) % len;
-            }
-        }
-        display_str[j++] = data->scroll_text[idx];
-    }
-    display_str[j] = '\0';
+    GString *display_str = g_string_new("");
     
-    if (g_utf8_validate(display_str, -1, NULL)) {
-        gtk_label_set_text(GTK_LABEL(data->lbl_title), display_str);
+    for (int i = 0; i < display_len; i++) {
+        int idx = (data->scroll_offset + i) % char_len;
+        gchar *ptr = g_utf8_offset_to_pointer(data->scroll_text, idx);
+        gunichar c = g_utf8_get_char(ptr);
+        g_string_append_unichar(display_str, c);
     }
     
-    data->scroll_offset = (data->scroll_offset + 1) % len;
+    gtk_label_set_text(GTK_LABEL(data->lbl_title), display_str->str);
+    g_string_free(display_str, TRUE);
+    
+    data->scroll_offset = (data->scroll_offset + 1) % char_len;
     return G_SOURCE_CONTINUE;
 }
 
