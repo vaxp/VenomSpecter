@@ -16,6 +16,7 @@ typedef struct {
     double cpu_hist[HISTORY_LEN];
     double ram_hist[HISTORY_LEN];
     int hist_idx;
+    guint timer_id;
     
     /* For CPU calc */
     unsigned long long last_total;
@@ -162,7 +163,11 @@ static gboolean update_sys_stats(gpointer user_data) {
 
 static void on_widget_destroy(GtkWidget *widget, gpointer user_data) {
     (void)widget;
-    g_free(user_data);
+    SysMonitorData *data = (SysMonitorData *)user_data;
+    if (data->timer_id > 0) {
+        g_source_remove(data->timer_id);
+    }
+    g_free(data);
 }
 
 /* Construct the UI */
@@ -217,7 +222,7 @@ static GtkWidget* create_sys_monitor_widget(void) {
     update_sys_stats(data);
 
     /* Attach timer */
-    g_timeout_add(UPDATE_INTERVAL_MS, update_sys_stats, data);
+    data->timer_id = g_timeout_add(UPDATE_INTERVAL_MS, update_sys_stats, data);
     g_signal_connect(main_box, "destroy", G_CALLBACK(on_widget_destroy), data);
 
     gtk_widget_show_all(main_box);
