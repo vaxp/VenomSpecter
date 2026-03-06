@@ -12,17 +12,65 @@ typedef struct {
     
     GDBusConnection *bus;
     guint name_owner_id;
-    char *active_player; /* e.g. "org.mpris.MediaPlayer2.spotify" */
+    char *active_player;
     
     char *song_title;
     char *song_artist;
     gboolean is_playing;
     
-    /* For marquee effect */
     guint scroll_timer_id;
     int scroll_offset;
     char scroll_text[256];
 } MprisData;
+
+/* --- Helpers لاستخراج البيانات بأمان من DBus --- */
+
+static gchar* extract_string(GVariant *dict, const char *key) {
+    if (!dict) return NULL;
+    GVariant *v = g_variant_lookup_value(dict, key, NULL);
+    if (!v) return NULL;
+    
+    GVariant *real_val = v;
+    if (g_variant_is_of_type(v, G_VARIANT_TYPE_VARIANT)) {
+        real_val = g_variant_get_variant(v);
+        g_variant_unref(v);
+    }
+    
+    gchar *result = NULL;
+    if (g_variant_is_of_type(real_val, G_VARIANT_TYPE_STRING)) {
+        result = g_strdup(g_variant_get_string(real_val, NULL));
+    }
+    g_variant_unref(real_val);
+    return result;
+}
+
+static gchar* extract_first_array_string(GVariant *dict, const char *key) {
+    if (!dict) return NULL;
+    GVariant *v = g_variant_lookup_value(dict, key, NULL);
+    if (!v) return NULL;
+    
+    GVariant *real_val = v;
+    if (g_variant_is_of_type(v, G_VARIANT_TYPE_VARIANT)) {
+        real_val = g_variant_get_variant(v);
+        g_variant_unref(v);
+    }
+    
+    gchar *result = NULL;
+    if (g_variant_is_of_type(real_val, G_VARIANT_TYPE_STRING_ARRAY)) {
+        GVariantIter iter;
+        g_variant_iter_init(&iter, real_val);
+        gchar *str = NULL;
+        if (g_variant_iter_next(&iter, "s", &str)) {
+            result = str; /* takes ownership */
+            gchar *dummy;
+            while (g_variant_iter_next(&iter, "s", &dummy)) g_free(dummy);
+        }
+    }
+    g_variant_unref(real_val);
+    return result;
+}
+
+/* --- تحديث الواجهة --- */
 
 static void update_ui(MprisData *data) {
     if (!data->active_player) {
@@ -36,15 +84,15 @@ static void update_ui(MprisData *data) {
     
     gtk_widget_show_all(data->box);
     
-    /* Update play/pause icon */
     GtkWidget *icon = gtk_bin_get_child(GTK_BIN(data->btn_play));
-    if (data->is_playing) {
-        gtk_image_set_from_icon_name(GTK_IMAGE(icon), "media-playback-pause-symbolic", GTK_ICON_SIZE_BUTTON);
-    } else {
-        gtk_image_set_from_icon_name(GTK_IMAGE(icon), "media-playback-start-symbolic", GTK_ICON_SIZE_BUTTON);
+    if (icon && GTK_IS_IMAGE(icon)) {
+        if (data->is_playing) {
+            gtk_image_set_from_icon_name(GTK_IMAGE(icon), "media-playback-pause-symbolic", GTK_ICON_SIZE_BUTTON);
+        } else {
+            gtk_image_set_from_icon_name(GTK_IMAGE(icon), "media-playback-start-symbolic", GTK_ICON_SIZE_BUTTON);
+        }
     }
     
-    /* Format label text */
     if (data->song_title && data->song_artist && strlen(data->song_artist) > 0) {
         snprintf(data->scroll_text, sizeof(data->scroll_text), "%s - %s    ", data->song_artist, data->song_title);
     } else if (data->song_title) {
@@ -53,8 +101,10 @@ static void update_ui(MprisData *data) {
         snprintf(data->scroll_text, sizeof(data->scroll_text), "No Media    ");
     }
     
-    /* Reset scroll */
     data->scroll_offset = 0;
+    
+    /* Force immediate draw, or it may stay blank until tick */
+    gtk_label_set_text(GTK_LABEL(data->lbl_title), data->scroll_text);
 }
 
 static gboolean on_scroll_tick(gpointer user_data) {
@@ -65,8 +115,7 @@ static gboolean on_scroll_tick(gpointer user_data) {
     size_t len = strlen(data->scroll_text);
     if (len == 0) return G_SOURCE_CONTINUE;
     
-    /* Very basic character shifting for marquee */
-    int display_len = 20; /* Max chars to show */
+    int display_len = 20; 
     if ((int)len <= display_len) {
         gtk_label_set_text(GTK_LABEL(data->lbl_title), data->scroll_text);
         return G_SOURCE_CONTINUE;
@@ -77,9 +126,7 @@ static gboolean on_scroll_tick(gpointer user_data) {
     for (int i = 0; i < display_len && j < 63; i++) {
         int idx = (data->scroll_offset + i) % len;
         
-        /* Handle simple UTF8 boundaries - highly simplified for this example */
         if ((data->scroll_text[idx] & 0xC0) == 0x80) {
-            /* We started in the middle of a UTF-8 char, skip ahead to a valid start */
             while ((data->scroll_text[idx] & 0xC0) == 0x80) {
                 data->scroll_offset = (data->scroll_offset + 1) % len;
                 idx = (data->scroll_offset + i) % len;
@@ -89,7 +136,6 @@ static gboolean on_scroll_tick(gpointer user_data) {
     }
     display_str[j] = '\0';
     
-    /* Ensure valid UTF-8 before setting to GTK to prevent crash */
     if (g_utf8_validate(display_str, -1, NULL)) {
         gtk_label_set_text(GTK_LABEL(data->lbl_title), display_str);
     }
@@ -114,71 +160,129 @@ static void get_mpris_properties(MprisData *data) {
                                                 G_DBUS_CALL_FLAGS_NONE,
                                                 -1, NULL, &error);
     if (error) {
-        g_warning("MPRIS GetAll error: %s", error->message);
         g_error_free(error);
         return;
     }
     
     if (res) {
-        GVariantIter *iter;
-        g_variant_get(res, "(a{sv})", &iter);
+        /* استخراج القاموس الرئيسي */
+        GVariant *dict = g_variant_get_child_value(res, 0);
         
-        const gchar *key;
-        GVariant *value;
-        while (g_variant_iter_loop(iter, "{&sv}", &key, &value)) {
-            if (g_strcmp0(key, "PlaybackStatus") == 0) {
-                GVariant *v = g_variant_get_variant(value);
-                if (v && g_variant_is_of_type(v, G_VARIANT_TYPE_STRING)) {
-                    const gchar *status = g_variant_get_string(v, NULL);
-                    data->is_playing = (g_strcmp0(status, "Playing") == 0);
-                }
-                if (v) g_variant_unref(v);
-            } 
-            else if (g_strcmp0(key, "Metadata") == 0) {
-                GVariant *v_dict = g_variant_get_variant(value);
-                if (v_dict && g_variant_is_of_type(v_dict, G_VARIANT_TYPE("a{sv}"))) {
-                    GVariantIter *meta_iter;
-                    g_variant_get(v_dict, "a{sv}", &meta_iter);
-                    
-                    const gchar *m_key;
-                    GVariant *m_val;
-                    while (g_variant_iter_loop(meta_iter, "{&sv}", &m_key, &m_val)) {
-                        GVariant *real_val = g_variant_get_variant(m_val);
-                        if (!real_val) continue;
-
-                        if (g_strcmp0(m_key, "xesam:title") == 0) {
-                            if (g_variant_is_of_type(real_val, G_VARIANT_TYPE_STRING)) {
-                                g_free(data->song_title);
-                                data->song_title = g_variant_dup_string(real_val, NULL);
-                            }
-                        }
-                        else if (g_strcmp0(m_key, "xesam:artist") == 0) {
-                            if (g_variant_is_of_type(real_val, G_VARIANT_TYPE_STRING_ARRAY)) {
-                                GVariantIter *arr_iter;
-                                g_variant_get(real_val, "as", &arr_iter);
-                                char *first_artist = NULL;
-                                g_variant_iter_next(arr_iter, "s", &first_artist);
-                                
-                                g_free(data->song_artist);
-                                data->song_artist = first_artist;
-                                
-                                char *dummy;
-                                while (g_variant_iter_next(arr_iter, "s", &dummy)) g_free(dummy);
-                                g_variant_iter_free(arr_iter);
-                            }
-                        }
-                        g_variant_unref(real_val);
-                    }
-                    g_variant_iter_free(meta_iter);
-                }
-                if (v_dict) g_variant_unref(v_dict);
-            }
+        /* 1. جلب حالة التشغيل */
+        gchar *status_str = extract_string(dict, "PlaybackStatus");
+        if (status_str) {
+            data->is_playing = (g_strcmp0(status_str, "Playing") == 0);
+            g_free(status_str);
         }
-        g_variant_iter_free(iter);
+        
+        /* 2. جلب الميتاداتا */
+        GVariant *meta_v = g_variant_lookup_value(dict, "Metadata", NULL);
+        if (meta_v) {
+            GVariant *meta_dict = meta_v;
+            if (g_variant_is_of_type(meta_v, G_VARIANT_TYPE_VARIANT)) {
+                meta_dict = g_variant_get_variant(meta_v);
+                g_variant_unref(meta_v);
+            }
+            
+            /* جلب العنوان */
+            gchar *title = extract_string(meta_dict, "xesam:title");
+            if (title) {
+                g_free(data->song_title);
+                data->song_title = title;
+            }
+            
+            /* جلب الفنان (يأتي كمصفوفة) */
+            gchar *artist = extract_first_array_string(meta_dict, "xesam:artist");
+            if (artist) {
+                g_free(data->song_artist);
+                data->song_artist = artist;
+            }
+            
+            g_variant_unref(meta_dict);
+        }
+        
+        g_variant_unref(dict);
         g_variant_unref(res);
     }
     
     update_ui(data);
+}
+
+static void scan_players_and_update(MprisData *data) {
+    if (!data->bus) return;
+    
+    GError *error = NULL;
+    GVariant *res = g_dbus_connection_call_sync(data->bus,
+                                                "org.freedesktop.DBus",
+                                                "/org/freedesktop/DBus",
+                                                "org.freedesktop.DBus",
+                                                "ListNames",
+                                                NULL,
+                                                G_VARIANT_TYPE("(as)"),
+                                                G_DBUS_CALL_FLAGS_NONE,
+                                                -1, NULL, &error);
+    if (error) { g_error_free(error); return; }
+    
+    GVariantIter *iter;
+    g_variant_get(res, "(as)", &iter);
+    char *name;
+    
+    char *best_player = NULL;
+    char *fallback_player = NULL;
+    
+    while (g_variant_iter_next(iter, "s", &name)) {
+        if (g_str_has_prefix(name, "org.mpris.MediaPlayer2.")) {
+            // Check if it's playing
+            GVariant *prop_res = g_dbus_connection_call_sync(data->bus,
+                                          name,
+                                          "/org/mpris/MediaPlayer2",
+                                          "org.freedesktop.DBus.Properties",
+                                          "Get",
+                                          g_variant_new("(ss)", "org.mpris.MediaPlayer2.Player", "PlaybackStatus"),
+                                          G_VARIANT_TYPE("(v)"),
+                                          G_DBUS_CALL_FLAGS_NONE,
+                                          500, NULL, NULL);
+            if (prop_res) {
+                GVariant *v_val;
+                g_variant_get(prop_res, "(v)", &v_val);
+                if (g_variant_is_of_type(v_val, G_VARIANT_TYPE_STRING)) {
+                    const gchar *status = g_variant_get_string(v_val, NULL);
+                    if (g_strcmp0(status, "Playing") == 0) {
+                        best_player = g_strdup(name);
+                        g_variant_unref(v_val);
+                        g_variant_unref(prop_res);
+                        g_free(name);
+                        break;
+                    }
+                }
+                g_variant_unref(v_val);
+                g_variant_unref(prop_res);
+            }
+            if (!fallback_player) fallback_player = g_strdup(name);
+        }
+        g_free(name);
+    }
+    g_variant_iter_free(iter);
+    g_variant_unref(res);
+    
+    char *selected_player = best_player ? best_player : fallback_player;
+    
+    if (g_strcmp0(data->active_player, selected_player) != 0) {
+        g_free(data->active_player);
+        data->active_player = g_strdup(selected_player);
+    }
+    
+    if (best_player) g_free(best_player);
+    if (fallback_player) g_free(fallback_player);
+    
+    if (!data->active_player) {
+         g_free(data->song_title); data->song_title = NULL;
+         g_free(data->song_artist); data->song_artist = NULL;
+         data->is_playing = FALSE;
+         update_ui(data);
+    } else {
+         get_mpris_properties(data);
+    }
 }
 
 static void on_dbus_signal(GDBusConnection *connection,
@@ -190,11 +294,7 @@ static void on_dbus_signal(GDBusConnection *connection,
                            gpointer user_data) {
     (void)connection; (void)sender_name; (void)object_path; (void)interface_name; (void)signal_name; (void)parameters;
     MprisData *data = (MprisData*)user_data;
-    
-    /* DBus signals use unique names like :1.45. Since we only listen to
-       PropertiesChanged on MediaPlayer2.Player, we can just rebuild state
-       from our known active_player whenever this fires. */
-    get_mpris_properties(data);
+    scan_players_and_update(data);
 }
 
 static void on_name_owner_changed(GDBusConnection *connection,
@@ -204,37 +304,11 @@ static void on_name_owner_changed(GDBusConnection *connection,
                                   const gchar *signal_name,
                                   GVariant *parameters,
                                   gpointer user_data) {
-    (void)connection; (void)sender_name; (void)object_path; (void)interface_name; (void)signal_name;
+    (void)connection; (void)sender_name; (void)object_path; (void)interface_name; (void)signal_name; (void)parameters;
     MprisData *data = (MprisData*)user_data;
-    
-    const gchar *name, *old_owner, *new_owner;
-    g_variant_get(parameters, "(&s&s&s)", &name, &old_owner, &new_owner);
-    
-    if (g_str_has_prefix(name, "org.mpris.MediaPlayer2.")) {
-        if (strlen(new_owner) > 0) {
-            /* New player appeared, prefer it */
-            g_free(data->active_player);
-            data->active_player = g_strdup(name);
-            get_mpris_properties(data);
-            
-            if (data->scroll_timer_id == 0) {
-                data->scroll_timer_id = g_timeout_add(250, on_scroll_tick, data);
-            }
-        } 
-        else if (strlen(old_owner) > 0 && g_strcmp0(name, data->active_player) == 0) {
-            /* Our active player vanished */
-            g_free(data->active_player);
-            data->active_player = NULL;
-            g_free(data->song_title); data->song_title = NULL;
-            g_free(data->song_artist); data->song_artist = NULL;
-            update_ui(data);
-            
-            /* TODO: check if other players exist and fallback to them */
-        }
-    }
+    scan_players_and_update(data);
 }
 
-/* Control actions */
 static void send_mpris_command(MprisData *data, const char *method) {
     if (!data->active_player || !data->bus) return;
     
@@ -257,39 +331,10 @@ static void on_next_clicked(GtkButton *btn, gpointer user_data) {
     (void)btn; send_mpris_command((MprisData*)user_data, "Next");
 }
 
-/* Initialization */
 static void find_initial_player(MprisData *data) {
-    GError *error = NULL;
-    GVariant *res = g_dbus_connection_call_sync(data->bus,
-                                                "org.freedesktop.DBus",
-                                                "/org/freedesktop/DBus",
-                                                "org.freedesktop.DBus",
-                                                "ListNames",
-                                                NULL,
-                                                G_VARIANT_TYPE("(as)"),
-                                                G_DBUS_CALL_FLAGS_NONE,
-                                                -1, NULL, &error);
-    if (!error && res) {
-        GVariantIter *iter;
-        g_variant_get(res, "(as)", &iter);
-        char *name;
-        while (g_variant_iter_next(iter, "s", &name)) {
-            if (g_str_has_prefix(name, "org.mpris.MediaPlayer2.")) {
-                data->active_player = g_strdup(name);
-                g_free(name);
-                break; /* Just grab the first one we see initially */
-            }
-            g_free(name);
-        }
-        g_variant_iter_free(iter);
-        g_variant_unref(res);
-        
-        if (data->active_player) {
-            get_mpris_properties(data);
-            data->scroll_timer_id = g_timeout_add(250, on_scroll_tick, data);
-        }
-    } else if (error) {
-        g_error_free(error);
+    scan_players_and_update(data);
+    if (data->active_player && data->scroll_timer_id == 0) {
+        data->scroll_timer_id = g_timeout_add(250, on_scroll_tick, data);
     }
 }
 
@@ -298,7 +343,6 @@ static void on_widget_destroy(GtkWidget *widget, gpointer user_data) {
     MprisData *data = (MprisData*)user_data;
     if (data->scroll_timer_id > 0) g_source_remove(data->scroll_timer_id);
     if (data->bus && data->name_owner_id > 0) g_dbus_connection_signal_unsubscribe(data->bus, data->name_owner_id);
-    /* Also unsubscribe properties changed, omitted for brevity */
     
     g_free(data->active_player);
     g_free(data->song_title);
@@ -315,7 +359,6 @@ static GtkWidget* create_mpris_widget(void) {
     gtk_widget_set_margin_start(data->box, 4);
     gtk_widget_set_margin_end(data->box, 4);
     
-    /* Buttons */
     data->btn_prev = gtk_button_new_from_icon_name("media-skip-backward-symbolic", GTK_ICON_SIZE_BUTTON);
     data->btn_play = gtk_button_new_from_icon_name("media-playback-start-symbolic", GTK_ICON_SIZE_BUTTON);
     data->btn_next = gtk_button_new_from_icon_name("media-skip-forward-symbolic", GTK_ICON_SIZE_BUTTON);
@@ -332,17 +375,14 @@ static GtkWidget* create_mpris_widget(void) {
     gtk_box_pack_start(GTK_BOX(data->box), data->btn_play, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(data->box), data->btn_next, FALSE, FALSE, 0);
     
-    /* Label */
     data->lbl_title = gtk_label_new("");
-    gtk_widget_set_size_request(data->lbl_title, 120, -1); /* fixed width for marquee */
+    gtk_widget_set_size_request(data->lbl_title, 120, -1); 
     gtk_label_set_xalign(GTK_LABEL(data->lbl_title), 0.0);
     gtk_box_pack_start(GTK_BOX(data->box), data->lbl_title, FALSE, FALSE, 4);
     
-    /* Setup DBus */
     GError *error = NULL;
     data->bus = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, &error);
     if (!error && data->bus) {
-        /* Listen for property changes (Metadata, PlaybackStatus) */
         g_dbus_connection_signal_subscribe(data->bus,
                                            NULL,
                                            "org.freedesktop.DBus.Properties",
@@ -353,7 +393,6 @@ static GtkWidget* create_mpris_widget(void) {
                                            on_dbus_signal,
                                            data, NULL);
                                            
-        /* Listen for NameOwnerChanged to detect open/close of players */
         data->name_owner_id = g_dbus_connection_signal_subscribe(data->bus,
                                            "org.freedesktop.DBus",
                                            "org.freedesktop.DBus",
@@ -366,7 +405,6 @@ static GtkWidget* create_mpris_widget(void) {
                                            
         find_initial_player(data);
     } else if (error) {
-        g_warning("Could not connect to session bus for MPRIS: %s", error->message);
         g_error_free(error);
     }
     
@@ -382,8 +420,8 @@ static GtkWidget* create_mpris_widget(void) {
 VenomPanelPluginAPI* venom_panel_plugin_init(void) {
     static VenomPanelPluginAPI api;
     api.name          = "Media Controls";
-    api.description   = "Displays MPRIS media controls (Play/Pause/Skip).";
-    api.author        = "Venom";
+    api.description   = "Displays MPRIS media controls (Play/Pause/Skip) bulletproof for Chrome.";
+    api.author        = "Venom / Antigravity";
     api.expand        = FALSE;
     api.padding       = 4;
     api.create_widget = create_mpris_widget;
