@@ -418,3 +418,1417 @@ Brightness Manager: Using xrandr (output: HDMI-1)
 [Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
 [Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
 venom-panel: no process found
+[Panel] Plugin 'App Menu' loaded (expand=0 pad=2)
+[Panel] Plugin 'System Monitor' loaded (expand=0 pad=2)
+[NetworkClient] Connecting to org.venom.Network...
+[NetworkClient] ✅ WiFi proxy connected
+[NetworkClient] ✅ Bluetooth proxy connected
+[NetworkClient] ✅ Ethernet proxy connected
+[NetworkClient] Initialized
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Panel] Plugin 'Network Speed' loaded (expand=0 pad=2)
+[Panel] Plugin 'Workspace Switcher' loaded (expand=0 pad=2)
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Panel] Received reload signal! Reloading config...
+[Panel] Plugin 'App Menu' loaded (expand=0 pad=2)
+[Panel] Plugin 'System Monitor' loaded (expand=0 pad=2)
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Panel] Plugin 'Network Speed' loaded (expand=0 pad=2)
+[Panel] Plugin 'Workspace Switcher' loaded (expand=0 pad=2)
+[Panel] Plugin 'Window List' loaded (expand=0 pad=2)
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Panel] Plugin 'App Menu' loaded (expand=0 pad=2)
+[Panel] Plugin 'System Monitor' loaded (expand=0 pad=2)
+[NetworkClient] Connecting to org.venom.Network...
+[NetworkClient] ✅ WiFi proxy connected
+[NetworkClient] ✅ Bluetooth proxy connected
+[NetworkClient] ✅ Ethernet proxy connected
+[NetworkClient] Initialized
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Panel] Plugin 'Network Speed' loaded (expand=0 pad=2)
+[Panel] Plugin 'Workspace Switcher' loaded (expand=0 pad=2)
+[Panel] Plugin 'Window List' loaded (expand=0 pad=2)
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Brightness] Manager Init...
+[Brightness] Initializing D-Bus...
+[Brightness] D-Bus proxy created.
+[Brightness] Checking 'Brightness' property...
+[Brightness] 'Brightness' property not found or null.
+[Brightness] Checking brightnessctl...
+Can't modify brightness: Permission denied
+
+You should run this program with root privileges.
+Alternatively, get write permissions for device files.
+Brightness Manager: brightnessctl found but lacks permissions. Skipping.
+[Brightness] Checking sysfs...
+[Brightness] Checking xrandr...
+Brightness Manager: Using xrandr (output: HDMI-1)
+[NotificationClient] Connecting to org.freedesktop.Notifications...
+[NotificationClient] ✅ Connected to venom_notify
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Ethernet] Checking connection...
+[Ethernet] Interface: enp0s31f6, connected=1, enabled=1
+[Ethernet] Any connected: 1
+[NotificationClient] Got 0 notifications
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Panel] Plugin 'App Menu' loaded (expand=0 pad=2)
+[Panel] Plugin 'System Monitor' loaded (expand=0 pad=2)
+[NetworkClient] Connecting to org.venom.Network...
+[NetworkClient] ✅ WiFi proxy connected
+[NetworkClient] ✅ Bluetooth proxy connected
+[NetworkClient] ✅ Ethernet proxy connected
+[NetworkClient] Initialized
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Panel] Plugin 'Network Speed' loaded (expand=0 pad=2)
+[Panel] Plugin 'Workspace Switcher' loaded (expand=0 pad=2)
+[Panel] Plugin 'Window List' loaded (expand=0 pad=2)
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Bluetooth] GVariant type: ((bbbss))
+[Bluetooth] GVariant data: ((false, false, false, '', ''),)
+[Bluetooth] Status: powered=0, discovering=0, pairable=0

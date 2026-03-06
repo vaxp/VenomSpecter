@@ -71,9 +71,18 @@ static void rebuild_workspace_buttons(WorkspaceData *data) {
     }
     g_list_free(children);
 
+    static const char* roman_numerals[] = {
+        "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
+        "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"
+    };
+
     for (int i = 0; i < data->num_desktops; i++) {
         char label[16];
-        snprintf(label, sizeof(label), "%d", i + 1);
+        if (i < 20) {
+            snprintf(label, sizeof(label), "%s", roman_numerals[i]);
+        } else {
+            snprintf(label, sizeof(label), "%d", i + 1);
+        }
         
         GtkWidget *btn = gtk_button_new_with_label(label);
         gtk_widget_set_size_request(btn, 28, 28);
