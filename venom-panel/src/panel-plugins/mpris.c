@@ -472,7 +472,7 @@ VenomPanelPluginAPI* venom_panel_plugin_init(void) {
     static VenomPanelPluginAPI api;
     api.name          = "Media Controls";
     api.description   = "Displays MPRIS media controls (Play/Pause/Skip) bulletproof for Chrome.";
-    api.author        = "Venom / Antigravity";
+    api.author        = "Venom";
     api.expand        = FALSE;
     api.padding       = 4;
     api.create_widget = create_mpris_widget;
