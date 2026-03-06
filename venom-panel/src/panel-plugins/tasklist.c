@@ -17,6 +17,7 @@ typedef struct {
     /* Cache to prevent rebuilding too often */
     Window *client_list;
     int num_clients;
+    unsigned long current_desktop;
 } TasklistData;
 
 /* Helper to get property of type Window */
@@ -43,6 +44,29 @@ static Window* get_x11_prop_windows(Display *dpy, Window win, const char *prop_n
     if (prop_retval) XFree(prop_retval);
     *count_out = 0;
     return NULL;
+}
+
+/* Helper to get property of type CARDINAL */
+static unsigned long get_x11_prop_cardinal(Display *dpy, Window win, const char *prop_name, unsigned long fallback_val) {
+    Atom prop = XInternAtom(dpy, prop_name, True);
+    if (prop == None) return fallback_val;
+    
+    Atom actual_type;
+    int actual_format;
+    unsigned long nitems;
+    unsigned long bytes_after;
+    unsigned char *prop_retval = NULL;
+    
+    int status = XGetWindowProperty(dpy, win, prop, 0, 1, False, XA_CARDINAL,
+                                    &actual_type, &actual_format, &nitems, &bytes_after, &prop_retval);
+    
+    unsigned long result = fallback_val;
+    if (status == Success && prop_retval && actual_format == 32 && nitems > 0) {
+        result = ((unsigned long*)prop_retval)[0];
+    }
+    
+    if (prop_retval) XFree(prop_retval);
+    return result;
 }
 
 /* Helper to get string property */
@@ -390,6 +414,12 @@ static void rebuild_tasklist(TasklistData *data) {
         Window win = data->client_list[i];
         if (!is_normal_window(data->dpy, win)) continue;
         
+        /* Check if window is on the current workspace (or all workspaces: 0xFFFFFFFF) */
+        unsigned long win_desktop = get_x11_prop_cardinal(data->dpy, win, "_NET_WM_DESKTOP", data->current_desktop);
+        if (win_desktop != 0xFFFFFFFF && win_desktop != data->current_desktop) {
+            continue;
+        }
+        
         GtkWidget *btn = gtk_toggle_button_new();
         gtk_button_set_relief(GTK_BUTTON(btn), GTK_RELIEF_NONE);
         gtk_widget_set_size_request(btn, 36, 36); /* Square icon button */
@@ -442,9 +472,11 @@ static gboolean poll_tasklist(gpointer user_data) {
     Window new_active = (active_count > 0 && active_wins) ? active_wins[0] : None;
     if (active_wins) g_free(active_wins);
     
+    unsigned long new_desktop = get_x11_prop_cardinal(data->dpy, data->root, "_NET_CURRENT_DESKTOP", 0);
+    
     gboolean needs_rebuild = FALSE;
     
-    if (new_count != data->num_clients || new_active != data->active_win) {
+    if (new_count != data->num_clients || new_active != data->active_win || new_desktop != data->current_desktop) {
         needs_rebuild = TRUE;
     } else if (new_list && data->client_list) {
         if (memcmp(new_list, data->client_list, new_count * sizeof(Window)) != 0) {
@@ -457,6 +489,7 @@ static gboolean poll_tasklist(gpointer user_data) {
         data->client_list = new_list;
         data->num_clients = new_count;
         data->active_win = new_active;
+        data->current_desktop = new_desktop;
         rebuild_tasklist(data);
     } else {
         if (new_list) g_free(new_list);
@@ -487,6 +520,7 @@ static GtkWidget* create_tasklist_widget(void) {
     /* Initial fetch */
     if (data->dpy) {
         data->client_list = get_x11_prop_windows(data->dpy, data->root, "_NET_CLIENT_LIST", &data->num_clients);
+        data->current_desktop = get_x11_prop_cardinal(data->dpy, data->root, "_NET_CURRENT_DESKTOP", 0);
         int active_count = 0;
         Window *active = get_x11_prop_windows(data->dpy, data->root, "_NET_ACTIVE_WINDOW", &active_count);
         if (active) {
