@@ -2,6 +2,9 @@
 #include <gio/gio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dlfcn.h>
+#include <dirent.h>
+#include "venom-panel-plugin-api.h"
 
 #define PANEL_CONFIG_FILE "/home/x/.config/venom/panel.conf"
 #define PANEL_PLUGINS_DIR "/home/x/.config/venom/panel-plugins"
@@ -177,7 +180,34 @@ static void on_add_item(GtkButton *btn, gpointer data) {
     GtkWidget *content = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
     
     GtkWidget *combo = gtk_combo_box_text_new();
-    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(combo), "plugin:launcher.so", "Plugin: Launcher");
+    
+    /* Dynamically load plugins from directory */
+    DIR *dir = opendir(PANEL_PLUGINS_DIR);
+    if (dir) {
+        struct dirent *ent;
+        while ((ent = readdir(dir)) != NULL) {
+            if (g_str_has_suffix(ent->d_name, ".so")) {
+                char *full_path = g_build_filename(PANEL_PLUGINS_DIR, ent->d_name, NULL);
+                void *handle = dlopen(full_path, RTLD_LAZY | RTLD_LOCAL);
+                if (handle) {
+                    VenomPanelPluginInitFn init_func = (VenomPanelPluginInitFn)dlsym(handle, "venom_panel_plugin_init");
+                    if (init_func) {
+                        VenomPanelPluginAPI *api = init_func();
+                        char id_str[256];
+                        char label_str[256];
+                        snprintf(id_str, sizeof(id_str), "plugin:%s", ent->d_name);
+                        snprintf(label_str, sizeof(label_str), "Plugin: %s", api->name ? api->name : ent->d_name);
+                        gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(combo), id_str, label_str);
+                    }
+                    dlclose(handle);
+                }
+                g_free(full_path);
+            }
+        }
+        closedir(dir);
+    }
+    
+    /* Append static builtin items */
     gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(combo), "builtin:tray", "Builtin: System Tray");
     gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(combo), "builtin:power", "Builtin: Power Menu");
     gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(combo), "builtin:clock", "Builtin: Clock");
@@ -185,6 +215,7 @@ static void on_add_item(GtkButton *btn, gpointer data) {
     gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(combo), "builtin:control-center", "Builtin: Control Center Button");
     gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(combo), "spacer", "Spacer (Expands)");
     gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(combo), "separator", "Separator Line");
+    
     gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
     
     gtk_box_pack_start(GTK_BOX(content), combo, TRUE, TRUE, 8);
