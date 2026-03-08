@@ -35,6 +35,7 @@ typedef struct {
     gboolean is_pinned;       /* Whether app is pinned */
 } WindowGroup;
 
+GtkWidget *main_window;
 GtkWidget *box;
 GHashTable *window_groups; /* wm_class -> WindowGroup */
 GList *pinned_apps = NULL; /* List of pinned wm_class strings */
@@ -113,7 +114,7 @@ static void on_window_size_allocate(GtkWidget *widget, GtkAllocation *allocation
         gdk_monitor_get_geometry(monitor, &geometry);
         
         int x = geometry.x + (geometry.width - allocation->width) / 2;
-        int y = geometry.y + geometry.height - allocation->height;
+        int y = geometry.y + geometry.height - allocation->height - 10;
         
         gtk_window_move(GTK_WINDOW(widget), x, y);
     } else {
@@ -123,7 +124,7 @@ static void on_window_size_allocate(GtkWidget *widget, GtkAllocation *allocation
         gint screen_height = gdk_screen_get_height(screen);
         
         int x = (screen_width - allocation->width) / 2;
-        int y = screen_height - allocation->height;
+        int y = screen_height - allocation->height - 10;
         
         gtk_window_move(GTK_WINDOW(widget), x, y);
     }
@@ -165,8 +166,8 @@ int main(int argc, char *argv[]) {
     g_object_unref(provider);
 
     /* UI Setup */
-    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "vaxp-dock");
+    main_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(main_window), "vaxp-dock");
     
     /* Get screen dimensions for full-width sizing */
     GdkScreen *gdk_screen = gdk_display_get_default_screen(display);
@@ -174,37 +175,34 @@ int main(int argc, char *argv[]) {
     gint screen_height = gdk_screen_get_height(gdk_screen);
     
     /* Set as DOCK - explicitly declare as dock window */
-    gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_DOCK);
-    gtk_window_set_default_size(GTK_WINDOW(window), -1, 60);
-    gtk_window_set_gravity(GTK_WINDOW(window), GDK_GRAVITY_SOUTH);
-    gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
-    gtk_widget_set_app_paintable(window, TRUE);
+    gtk_window_set_type_hint(GTK_WINDOW(main_window), GDK_WINDOW_TYPE_HINT_DOCK);
+    gtk_window_set_default_size(GTK_WINDOW(main_window), -1, 60);
+    gtk_window_set_gravity(GTK_WINDOW(main_window), GDK_GRAVITY_SOUTH);
+    gtk_window_set_decorated(GTK_WINDOW(main_window), FALSE);
+    gtk_widget_set_app_paintable(main_window, TRUE);
     
     /* Window properties for dock behavior */
-    gtk_window_set_keep_above(GTK_WINDOW(window), TRUE);
-    gtk_window_stick(GTK_WINDOW(window));
-    gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), TRUE);
-    gtk_window_set_skip_pager_hint(GTK_WINDOW(window), TRUE);
+    gtk_window_set_keep_above(GTK_WINDOW(main_window), TRUE);
+    gtk_window_stick(GTK_WINDOW(main_window));
+    gtk_window_set_skip_taskbar_hint(GTK_WINDOW(main_window), TRUE);
+    gtk_window_set_skip_pager_hint(GTK_WINDOW(main_window), TRUE);
 
     /* Enable transparency */
     GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
     if (visual != NULL && gdk_screen_is_composited(screen)) {
-        gtk_widget_set_visual(window, visual);
+        gtk_widget_set_visual(main_window, visual);
     }
 
     box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_widget_set_name(box, "dock-box"); /* ID for CSS */
     gtk_widget_set_halign(box, GTK_ALIGN_CENTER);
     gtk_widget_set_valign(box, GTK_ALIGN_CENTER);
-    gtk_widget_set_margin_top(box, 4);      /* Add vertical padding */
-    gtk_widget_set_margin_bottom(box, 4);
-    gtk_widget_set_margin_start(box, 8);    /* Add horizontal padding */
-    gtk_widget_set_margin_end(box, 8);
-    gtk_container_add(GTK_CONTAINER(window), box);
+    /* Margins removed from C code to rely strictly on window size */
+    gtk_container_add(GTK_CONTAINER(main_window), box);
 
-    g_signal_connect(window, "realize", G_CALLBACK(on_dock_realize), NULL);
-    g_signal_connect(window, "size-allocate", G_CALLBACK(on_window_size_allocate), NULL);
-    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+    g_signal_connect(main_window, "realize", G_CALLBACK(on_dock_realize), NULL);
+    g_signal_connect(main_window, "size-allocate", G_CALLBACK(on_window_size_allocate), NULL);
+    g_signal_connect(main_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
     /* Initialize window groups hash table */
     window_groups = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
@@ -223,10 +221,10 @@ int main(int argc, char *argv[]) {
     XSelectInput(xdisplay, root_window, PropertyChangeMask);
     gdk_window_add_filter(NULL, event_filter, NULL);
 
-    gtk_widget_show_all(window);
+    gtk_widget_show_all(main_window);
     
     /* Position gets updated by size-allocate */
-    gtk_window_move(GTK_WINDOW(window), (screen_width) / 2, screen_height - 60);
+    gtk_window_move(GTK_WINDOW(main_window), (screen_width) / 2, screen_height - 60);
     
     gtk_main();
 
@@ -470,6 +468,9 @@ void update_window_list() {
         }
     }
     gtk_widget_show_all(box);
+    
+    /* Force main window to recalculate size and shrink if needed */
+    gtk_window_resize(GTK_WINDOW(main_window), 1, 1);
 }
 
 /* Get window name */
