@@ -76,6 +76,7 @@ static void on_dock_realize(GtkWidget *widget, gpointer data) {
 
 /* Function prototypes */
 static void on_dock_realize(GtkWidget *widget, gpointer data);
+static void on_window_size_allocate(GtkWidget *widget, GtkAllocation *allocation, gpointer data);
 /* Helper for process detachment */
 static void child_setup(gpointer user_data) {
     (void)user_data;
@@ -97,6 +98,36 @@ void save_pinned_apps();
 /* Launcher button */
 /* Defined in launcher.c */
 GdkFilterReturn event_filter(GdkXEvent *xevent, GdkEvent *event, gpointer data);
+
+/* Window size allocate callback for centering */
+static void on_window_size_allocate(GtkWidget *widget, GtkAllocation *allocation, gpointer data) {
+    (void)data;
+    GdkWindow *gdk_window = gtk_widget_get_window(widget);
+    if (!gdk_window) return;
+    
+    GdkDisplay *display = gdk_window_get_display(gdk_window);
+    GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
+    
+    if (monitor) {
+        GdkRectangle geometry;
+        gdk_monitor_get_geometry(monitor, &geometry);
+        
+        int x = geometry.x + (geometry.width - allocation->width) / 2;
+        int y = geometry.y + geometry.height - allocation->height;
+        
+        gtk_window_move(GTK_WINDOW(widget), x, y);
+    } else {
+        /* Fallback */
+        GdkScreen *screen = gtk_widget_get_screen(widget);
+        gint screen_width = gdk_screen_get_width(screen);
+        gint screen_height = gdk_screen_get_height(screen);
+        
+        int x = (screen_width - allocation->width) / 2;
+        int y = screen_height - allocation->height;
+        
+        gtk_window_move(GTK_WINDOW(widget), x, y);
+    }
+}
 
 int main(int argc, char *argv[]) {
     /* Suppress accessibility bus warning */
@@ -144,7 +175,7 @@ int main(int argc, char *argv[]) {
     
     /* Set as DOCK - explicitly declare as dock window */
     gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_DOCK);
-    gtk_window_set_default_size(GTK_WINDOW(window), screen_width, 60);
+    gtk_window_set_default_size(GTK_WINDOW(window), -1, 60);
     gtk_window_set_gravity(GTK_WINDOW(window), GDK_GRAVITY_SOUTH);
     gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
     gtk_widget_set_app_paintable(window, TRUE);
@@ -172,6 +203,7 @@ int main(int argc, char *argv[]) {
     gtk_container_add(GTK_CONTAINER(window), box);
 
     g_signal_connect(window, "realize", G_CALLBACK(on_dock_realize), NULL);
+    g_signal_connect(window, "size-allocate", G_CALLBACK(on_window_size_allocate), NULL);
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
     /* Initialize window groups hash table */
@@ -193,8 +225,8 @@ int main(int argc, char *argv[]) {
 
     gtk_widget_show_all(window);
     
-    /* Position at bottom center - full width */
-    gtk_window_move(GTK_WINDOW(window), 0, screen_height - 60);
+    /* Position gets updated by size-allocate */
+    gtk_window_move(GTK_WINDOW(window), (screen_width) / 2, screen_height - 60);
     
     gtk_main();
 
