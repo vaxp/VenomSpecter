@@ -22,6 +22,11 @@ static Atom net_active_window_atom;
 static Atom utf8_string_atom;
 static Atom wm_class_atom;
 static Atom wm_hints_atom;
+static Atom net_wm_state_atom;
+static Atom net_wm_state_skip_taskbar_atom;
+static Atom net_wm_window_type_atom;
+static Atom net_wm_window_type_dock_atom;
+static Atom net_wm_window_type_desktop_atom;
 
 /* Forward Decl */
 
@@ -44,6 +49,12 @@ void wm_init(void) {
     utf8_string_atom = XInternAtom(xdisplay, "UTF8_STRING", False);
     wm_class_atom = XInternAtom(xdisplay, "WM_CLASS", False);
     wm_hints_atom = XInternAtom(xdisplay, "WM_HINTS", False);
+
+    net_wm_state_atom = XInternAtom(xdisplay, "_NET_WM_STATE", False);
+    net_wm_state_skip_taskbar_atom = XInternAtom(xdisplay, "_NET_WM_STATE_SKIP_TASKBAR", False);
+    net_wm_window_type_atom = XInternAtom(xdisplay, "_NET_WM_WINDOW_TYPE", False);
+    net_wm_window_type_dock_atom = XInternAtom(xdisplay, "_NET_WM_WINDOW_TYPE_DOCK", False);
+    net_wm_window_type_desktop_atom = XInternAtom(xdisplay, "_NET_WM_WINDOW_TYPE_DESKTOP", False);
 
     window_groups = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     
@@ -164,6 +175,48 @@ GdkPixbuf *wm_get_window_icon(Window xwindow) {
     return pixbuf;
 }
 
+/* Helper to filter hidden/system windows */
+static gboolean wm_is_window_valid_for_dock(Window xwindow) {
+    Atom actual_type;
+    int actual_format;
+    unsigned long nitems, bytes_after;
+    unsigned char *prop = NULL;
+
+    /* Check _NET_WM_WINDOW_TYPE */
+    if (XGetWindowProperty(xdisplay, xwindow, net_wm_window_type_atom, 0, 1024, False,
+                           XA_ATOM, &actual_type, &actual_format, &nitems, &bytes_after, &prop) == Success) {
+        if (prop) {
+            Atom *types = (Atom *)prop;
+            for (unsigned long i = 0; i < nitems; i++) {
+                if (types[i] == net_wm_window_type_dock_atom ||
+                    types[i] == net_wm_window_type_desktop_atom) {
+                    XFree(prop);
+                    return FALSE;
+                }
+            }
+            XFree(prop);
+        }
+    }
+
+    /* Check _NET_WM_STATE */
+    prop = NULL;
+    if (XGetWindowProperty(xdisplay, xwindow, net_wm_state_atom, 0, 1024, False,
+                           XA_ATOM, &actual_type, &actual_format, &nitems, &bytes_after, &prop) == Success) {
+        if (prop) {
+            Atom *states = (Atom *)prop;
+            for (unsigned long i = 0; i < nitems; i++) {
+                if (states[i] == net_wm_state_skip_taskbar_atom) {
+                    XFree(prop);
+                    return FALSE;
+                }
+            }
+            XFree(prop);
+        }
+    }
+
+    return TRUE;
+}
+
 void wm_update_window_list(void) {
     /* Optimization: Mark all groups as empty but keep them to reuse icons */
     if (window_groups) {
@@ -191,6 +244,11 @@ void wm_update_window_list(void) {
             Window *list = (Window *)prop;
             for (unsigned long i = 0; i < nitems; i++) {
                 Window win = list[i];
+                
+                if (!wm_is_window_valid_for_dock(win)) {
+                    continue;
+                }
+
                 char *wm_class = wm_get_window_class(win);
                 if (wm_class) {
                     WindowGroupModel *group = g_hash_table_lookup(window_groups, wm_class);

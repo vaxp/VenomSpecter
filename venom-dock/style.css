@@ -9,7 +9,7 @@ window {
 /* 1. الدوك المصغر (Slim Dock) - تم تقليل الأحجام */
 /* ------------------------------------------------ */
 #dock-box {
-    background-color: rgba(0, 0, 0, 0.705);
+    background-color: rgba(0, 0, 0, 0.123);
     border: 1px solid rgba(24, 24, 24, 0.185);
 
     /* تقليل الانحناء ليناسب الحجم الصغير */
@@ -28,10 +28,10 @@ button {
     border: none;
 
     /* تقليل حشوة الزر نفسه ليصغر الحجم الكلي */
-    padding: 4px;
+    padding: 2px;
 
     border-radius: 12px;
-    margin: 1px;
+    margin: 0px;
     /* تقليل المسافة بين الأيقونات */
     color: rgb(255, 255, 255);
     transition: all 0.2s ease;
@@ -72,16 +72,18 @@ button:active {
 }
 
 .running-app:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(0, 0, 0, 0);
 }
 
 /* Pinned App (Not Running) */
 .pinned-app {
     opacity: 0.7;
+    background-color: rgba(0, 0, 0, 0);
 }
 
 .pinned-app:hover {
     opacity: 1.0;
+    background-color: rgba(0, 0, 0, 0);
 }
 
 /* ------------------------------------------------ */
@@ -158,8 +160,8 @@ button:active {
 /* ------------------------------------------------ */
 
 #launcher-button {
-    background-color: rgba(0, 0, 0, 0.87);
-    border: 1px solid rgb(255, 255, 255);
+    background-color: rgba(0, 0, 0, 0);
+    border: 0px solid rgba(0, 0, 0, 0);
     border-radius: 12px;
     /* تصغير الانحناء */
     margin-right: 10px;
@@ -168,9 +170,9 @@ button:active {
 }
 
 #launcher-button:hover {
-    background-color: rgb(0, 0, 0);
-    border: 1px solid rgb(0, 252, 210);
-    box-shadow: 0 0 10px rgb(0, 252, 210);
+    background-color: rgba(0, 0, 0, 0.192);
+    border: 1px solid rgba(0, 252, 210, 0.075);
+    box-shadow: 0 0 4px rgba(0, 252, 210, 0.11);
 }
 
 #launcher-button:active {
@@ -182,7 +184,7 @@ menu {
     background-color: rgba(0, 0, 0, 0.534);
     border-radius: 12px;
     padding: 5px;
-    border: 1px solid rgb(0, 252, 210);
+    border: 1px solid rgba(0, 252, 210, 0);
 }
 
 menuitem {
@@ -194,12 +196,12 @@ menuitem {
 }
 
 menuitem:hover {
-    background-color: rgb(0, 252, 210);
-    color: rgb(0, 0, 0);
+    background-color: rgba(32, 32, 32, 0.473);
+    color: rgb(255, 255, 255);
 }
 
 separator {
-    background-color: rgba(48, 211, 189, 0.671);
+    background-color: rgba(48, 211, 189, 0);
     min-height: 1px;
     margin: 2px 0;
 }

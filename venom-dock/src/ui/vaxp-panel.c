@@ -22,6 +22,11 @@ Atom net_active_window_atom;
 Atom utf8_string_atom;
 Atom wm_class_atom;
 Atom wm_hints_atom;
+Atom net_wm_state_atom;
+Atom net_wm_state_skip_taskbar_atom;
+Atom net_wm_window_type_atom;
+Atom net_wm_window_type_dock_atom;
+Atom net_wm_window_type_desktop_atom;
 
 
 /* Window Group structure for grouping windows by WM_CLASS */
@@ -101,10 +106,69 @@ void save_pinned_apps();
 GdkFilterReturn event_filter(GdkXEvent *xevent, GdkEvent *event, gpointer data);
 
 /* Window size allocate callback for centering */
+static gboolean on_window_draw(GtkWidget *widget, cairo_t *cr, gpointer data) {
+    (void)data;
+    /* Create a rounded rectangle shape for the window itself */
+    int width = gtk_widget_get_allocated_width(widget);
+    int height = gtk_widget_get_allocated_height(widget);
+    double radius = 14.0; /* Match CSS border-radius */
+
+    /* Clear the background completely */
+    cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
+    cairo_paint(cr);
+
+    /* Draw the rounded mask */
+    cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
+    cairo_new_sub_path(cr);
+    cairo_arc(cr, width - radius, radius, radius, -G_PI/2, 0);
+    cairo_arc(cr, width - radius, height - radius, radius, 0, G_PI/2);
+    cairo_arc(cr, radius, height - radius, radius, G_PI/2, G_PI);
+    cairo_arc(cr, radius, radius, radius, G_PI, 3*G_PI/2);
+    cairo_close_path(cr);
+    
+    /* Paint it with a solid, but since it's RGBA visual it will allow the CSS background through */
+    cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 0.0); 
+    cairo_fill(cr);
+
+    return FALSE; /* Let GTK draw the CSS over our cairo mask */
+}
+
+/* Window size allocate callback for centering and shaping */
 static void on_window_size_allocate(GtkWidget *widget, GtkAllocation *allocation, gpointer data) {
     (void)data;
     GdkWindow *gdk_window = gtk_widget_get_window(widget);
     if (!gdk_window) return;
+    
+    /* Create a shape mask for true X11 rounding (blur respect) */
+    cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_A1, allocation->width, allocation->height);
+    cairo_t *cr = cairo_create(surface);
+    
+    double radius = 14.0; /* Match CSS border-radius */
+    
+    /* Draw rounded rectangle mask */
+    cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
+    cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 0.0);
+    cairo_paint(cr);
+    
+    cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 1.0);
+    cairo_new_sub_path(cr);
+    cairo_arc(cr, allocation->width - radius, radius, radius, -G_PI/2, 0);
+    cairo_arc(cr, allocation->width - radius, allocation->height - radius, radius, 0, G_PI/2);
+    cairo_arc(cr, radius, allocation->height - radius, radius, G_PI/2, G_PI);
+    cairo_arc(cr, radius, radius, radius, G_PI, 3*G_PI/2);
+    cairo_close_path(cr);
+    cairo_fill(cr);
+    
+    /* Create region from surface and apply as shape to window */
+    cairo_region_t *region = gdk_cairo_region_create_from_surface(surface);
+    gtk_widget_shape_combine_region(widget, region);
+    
+    cairo_region_destroy(region);
+    cairo_destroy(cr);
+    cairo_surface_destroy(surface);
+    
+    /* Force redraw so Cairo shape updates when window shrinks/expands */
+    gtk_widget_queue_draw(widget);
     
     GdkDisplay *display = gdk_window_get_display(gdk_window);
     GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
@@ -148,6 +212,11 @@ int main(int argc, char *argv[]) {
     utf8_string_atom = XInternAtom(xdisplay, "UTF8_STRING", False);
     wm_class_atom = XInternAtom(xdisplay, "WM_CLASS", False);
     wm_hints_atom = XInternAtom(xdisplay, "WM_HINTS", False);
+    net_wm_state_atom = XInternAtom(xdisplay, "_NET_WM_STATE", False);
+    net_wm_state_skip_taskbar_atom = XInternAtom(xdisplay, "_NET_WM_STATE_SKIP_TASKBAR", False);
+    net_wm_window_type_atom = XInternAtom(xdisplay, "_NET_WM_WINDOW_TYPE", False);
+    net_wm_window_type_dock_atom = XInternAtom(xdisplay, "_NET_WM_WINDOW_TYPE_DOCK", False);
+    net_wm_window_type_desktop_atom = XInternAtom(xdisplay, "_NET_WM_WINDOW_TYPE_DESKTOP", False);
 
     /* Load CSS */
     GtkCssProvider *provider = gtk_css_provider_new();
@@ -200,6 +269,7 @@ int main(int argc, char *argv[]) {
     /* Margins removed from C code to rely strictly on window size */
     gtk_container_add(GTK_CONTAINER(main_window), box);
 
+    g_signal_connect(main_window, "draw", G_CALLBACK(on_window_draw), NULL);
     g_signal_connect(main_window, "realize", G_CALLBACK(on_dock_realize), NULL);
     g_signal_connect(main_window, "size-allocate", G_CALLBACK(on_window_size_allocate), NULL);
     g_signal_connect(main_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
@@ -229,6 +299,48 @@ int main(int argc, char *argv[]) {
     gtk_main();
 
     return 0;
+}
+
+/* Helper to check if a window should be shown in the dock */
+gboolean is_window_valid_for_dock(Window xwindow) {
+    Atom actual_type;
+    int actual_format;
+    unsigned long nitems, bytes_after;
+    unsigned char *prop = NULL;
+
+    /* Check _NET_WM_WINDOW_TYPE */
+    if (XGetWindowProperty(xdisplay, xwindow, net_wm_window_type_atom, 0, 1024, False,
+                           XA_ATOM, &actual_type, &actual_format, &nitems, &bytes_after, &prop) == Success) {
+        if (prop) {
+            Atom *types = (Atom *)prop;
+            for (unsigned long i = 0; i < nitems; i++) {
+                if (types[i] == net_wm_window_type_dock_atom ||
+                    types[i] == net_wm_window_type_desktop_atom) {
+                    XFree(prop);
+                    return FALSE;
+                }
+            }
+            XFree(prop);
+        }
+    }
+
+    /* Check _NET_WM_STATE */
+    prop = NULL;
+    if (XGetWindowProperty(xdisplay, xwindow, net_wm_state_atom, 0, 1024, False,
+                           XA_ATOM, &actual_type, &actual_format, &nitems, &bytes_after, &prop) == Success) {
+        if (prop) {
+            Atom *states = (Atom *)prop;
+            for (unsigned long i = 0; i < nitems; i++) {
+                if (states[i] == net_wm_state_skip_taskbar_atom) {
+                    XFree(prop);
+                    return FALSE;
+                }
+            }
+            XFree(prop);
+        }
+    }
+
+    return TRUE;
 }
 
 /* Update the list of windows in the panel */
@@ -288,6 +400,12 @@ void update_window_list() {
             /* First pass: Group windows by WM_CLASS */
             for (unsigned long i = 0; i < nitems; i++) {
                 Window win = list[i];
+                
+                /* Skip hidden windows */
+                if (!is_window_valid_for_dock(win)) {
+                    continue;
+                }
+                
                 char *wm_class = get_window_class(win);
                 
                 if (wm_class) {
