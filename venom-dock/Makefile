@@ -22,18 +22,11 @@ UI_HELPER_OBJS = $(BUILD_DIR)/launcher.o \
 
 # Main targets
 PANEL_OBJS = $(BUILD_DIR)/vaxp-panel.o
-LAUNCHER_MAIN_OBJ = $(BUILD_DIR)/launcher_main.o
 
-all: $(BUILD_DIR) vaxp-panel venom-launcher
+all: $(BUILD_DIR) vaxp-panel
 
 vaxp-panel: $(LOGIC_OBJS) $(UI_HELPER_OBJS) $(PANEL_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
-
-venom-launcher: $(LOGIC_OBJS) $(UI_HELPER_OBJS) $(LAUNCHER_MAIN_OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
-
-$(BUILD_DIR)/launcher_main.o: src/ui/launcher_main.c
-	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: src/logic/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -45,7 +38,7 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 clean:
-	rm -f $(TARGET) venom-launcher
+	rm -f $(TARGET)
 	rm -rf $(BUILD_DIR)
 
 .PHONY: all clean
