@@ -296,7 +296,7 @@ void create_launcher_button(GtkWidget *box) {
     gtk_widget_set_name(launcher_button, "launcher-button");
     
     GError *err = NULL;
-    GdkPixbuf *pix = gdk_pixbuf_new_from_file_at_scale("logo.png", 24, 24, TRUE, &err);
+    GdkPixbuf *pix = gdk_pixbuf_new_from_file_at_scale("logo.png", 34, 34, TRUE, &err);
     if (!pix) {
         if (err) g_error_free(err);
         gtk_container_add(GTK_CONTAINER(launcher_button), gtk_image_new_from_icon_name("start-here-symbolic", GTK_ICON_SIZE_BUTTON));
