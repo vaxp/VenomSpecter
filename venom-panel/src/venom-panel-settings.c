@@ -115,13 +115,62 @@ static void on_move_down(GtkButton *btn, gpointer data) {
     rebuild_listbox();
 }
 
+static GtkTargetEntry dnd_targets[] = {
+    { (gchar*)"VENOM_PANEL_ROW", GTK_TARGET_SAME_APP, 0 }
+};
+
+static gboolean defer_rebuild(gpointer data) {
+    save_config();
+    rebuild_listbox();
+    return FALSE;
+}
+
+static void on_drag_data_get(GtkWidget *widget, GdkDragContext *context, GtkSelectionData *data, guint info, guint time, gpointer user_data) {
+    (void)widget; (void)context; (void)info; (void)time;
+    GtkWidget *row = GTK_WIDGET(user_data);
+    int index = gtk_list_box_row_get_index(GTK_LIST_BOX_ROW(row));
+    gtk_selection_data_set(data, gdk_atom_intern("VENOM_PANEL_ROW", FALSE), 8, (const guchar *)&index, sizeof(int));
+}
+
+static void on_drag_data_received(GtkWidget *widget, GdkDragContext *context, int x, int y, GtkSelectionData *data, guint info, guint time, gpointer user_data) {
+    (void)widget; (void)x; (void)y; (void)info;
+    GtkWidget *row = GTK_WIDGET(user_data);
+    if (gtk_selection_data_get_length(data) == sizeof(int)) {
+        int source_index = *(int *)gtk_selection_data_get_data(data);
+        int dest_index = gtk_list_box_row_get_index(GTK_LIST_BOX_ROW(row));
+        
+        if (source_index >= 0 && dest_index >= 0 && source_index != dest_index) {
+            ConfigItem *item = g_list_nth_data(config_items, source_index);
+            if (item) {
+                config_items = g_list_remove(config_items, item);
+                config_items = g_list_insert(config_items, item, dest_index);
+                g_idle_add(defer_rebuild, NULL);
+            }
+        }
+        gtk_drag_finish(context, TRUE, FALSE, time);
+    } else {
+        gtk_drag_finish(context, FALSE, FALSE, time);
+    }
+}
+
 static GtkWidget* create_row(ConfigItem *item) {
     GtkWidget *row = gtk_list_box_row_new();
+    
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_widget_set_margin_start(box, 8);
     gtk_widget_set_margin_end(box, 8);
     gtk_widget_set_margin_top(box, 4);
     gtk_widget_set_margin_bottom(box, 4);
+
+    GtkWidget *drag_handle = gtk_event_box_new();
+    GtkWidget *drag_icon = gtk_image_new_from_icon_name("view-grid-symbolic", GTK_ICON_SIZE_BUTTON);
+    gtk_container_add(GTK_CONTAINER(drag_handle), drag_icon);
+    gtk_widget_set_tooltip_text(drag_handle, "Drag to reorder");
+    
+    gtk_drag_source_set(drag_handle, GDK_BUTTON1_MASK, dnd_targets, 1, GDK_ACTION_MOVE);
+    gtk_drag_dest_set(row, GTK_DEST_DEFAULT_ALL, dnd_targets, 1, GDK_ACTION_MOVE);
+    g_signal_connect(drag_handle, "drag-data-get", G_CALLBACK(on_drag_data_get), row);
+    g_signal_connect(row, "drag-data-received", G_CALLBACK(on_drag_data_received), row);
 
     char label_text[256];
     const char *icon_name = "application-x-addon";
@@ -140,6 +189,7 @@ static GtkWidget* create_row(ConfigItem *item) {
     gtk_label_set_markup(GTK_LABEL(lbl), label_text);
     gtk_widget_set_halign(lbl, GTK_ALIGN_START);
     
+    gtk_box_pack_start(GTK_BOX(box), drag_handle, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(box), icon, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(box), lbl, TRUE, TRUE, 0);
 
