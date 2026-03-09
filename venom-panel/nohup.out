@@ -31053,3 +31053,9 @@ The error was 'BadAccess (attempt to access private resource denied)'.
 [Bluetooth] GVariant type: ((bbbss))
 [Bluetooth] GVariant data: ((false, false, false, '', ''),)
 [Bluetooth] Status: powered=0, discovering=0, pairable=0
+[Panel] Plugin 'Workspace Switcher' loaded (expand=0 pad=2)
+[Panel] Plugin 'Window List' loaded (expand=0 pad=2)
+[Panel] Plugin 'Media Controls' loaded (expand=0 pad=2)
+
+** (venom-panel:5624): WARNING **: 23:15:56.085: SNI: GetItems failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.SNI was not provided by any .service files
+[Panel] Plugin 'Miasma Control' loaded (expand=0 pad=2)
