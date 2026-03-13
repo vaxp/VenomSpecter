@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -O2 -Iinclude -Iinclude/logic -Iinclude/ui $(shell pkg-config --cflags gtk+-3.0 x11 xcomposite xrender)
 LIBS = $(shell pkg-config --libs gtk+-3.0 x11 xcomposite xrender)
 
-TARGET = vaxp-panel
+TARGET = vaxp-dock
 BUILD_DIR = build
 
 # Source Directories (found recursively)
@@ -21,11 +21,11 @@ UI_HELPER_OBJS = $(BUILD_DIR)/launcher.o \
                  $(BUILD_DIR)/search.o
 
 # Main targets
-PANEL_OBJS = $(BUILD_DIR)/vaxp-panel.o
+PANEL_OBJS = $(BUILD_DIR)/vaxp-dock.o
 
-all: $(BUILD_DIR) vaxp-panel
+all: $(BUILD_DIR) vaxp-dock
 
-vaxp-panel: $(LOGIC_OBJS) $(UI_HELPER_OBJS) $(PANEL_OBJS)
+vaxp-dock: $(LOGIC_OBJS) $(UI_HELPER_OBJS) $(PANEL_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 $(BUILD_DIR)/%.o: src/logic/%.c
