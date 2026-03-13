@@ -31059,3 +31059,193 @@ The error was 'BadAccess (attempt to access private resource denied)'.
 
 ** (venom-panel:5624): WARNING **: 23:15:56.085: SNI: GetItems failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.SNI was not provided by any .service files
 [Panel] Plugin 'Miasma Control' loaded (expand=0 pad=2)
+[Brightness] Manager Init...
+[Brightness] Initializing D-Bus...
+[Brightness] D-Bus proxy created.
+[Brightness] Checking 'Brightness' property...
+[Brightness] 'Brightness' property not found or null.
+[Brightness] Checking brightnessctl...
+Can't modify brightness: Permission denied
+
+You should run this program with root privileges.
+Alternatively, get write permissions for device files.
+Brightness Manager: brightnessctl found but lacks permissions. Skipping.
+[Brightness] Checking sysfs...
+[Brightness] Checking xrandr...
+Brightness Manager: Using xrandr (output: HDMI-1)
+[NetworkClient] Connecting to org.venom.Network...
+[NetworkClient] ✅ WiFi proxy connected
+[NetworkClient] ✅ Bluetooth proxy connected
+[NetworkClient] ✅ Ethernet proxy connected
+[NetworkClient] Initialized
+[NotificationClient] Connecting to org.freedesktop.Notifications...
+[NotificationClient] ✅ Connected to venom_notify
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Ethernet] Checking connection...
+[Ethernet] GetInterfaces failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+** (venom-panel:5624): WARNING **: 23:29:00.937: [NotificationClient] GetDoNotDisturb failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.Notifications was not provided by any .service files
+
+** (venom-panel:5624): WARNING **: 23:29:00.943: [NotificationClient] GetHistory failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.Notifications was not provided by any .service files
+
+** (venom-panel:5624): WARNING **: 23:30:48.080: Miasma Plugin: Failed to set effect pulse: GDBus.Error:org.venomlinux.miasma.error.custom: Audio visualizer is not enabled
+
+** (venom-panel:5624): WARNING **: 23:30:49.863: Miasma Plugin: Failed to set effect flash: GDBus.Error:org.venomlinux.miasma.error.custom: Audio visualizer is not enabled
+
+** (venom-panel:5624): WARNING **: 23:30:53.591: Miasma Plugin: Failed to set effect neon: GDBus.Error:org.venomlinux.miasma.error.custom: Audio visualizer is not enabled
+
+** (venom-panel:5624): WARNING **: 23:30:57.638: Miasma Plugin: Failed to set effect chromatic: GDBus.Error:org.venomlinux.miasma.error.custom: Audio visualizer is not enabled
+
+** (venom-panel:5624): WARNING **: 23:30:59.214: Miasma Plugin: Failed to set effect shockwave: GDBus.Error:org.venomlinux.miasma.error.custom: Audio visualizer is not enabled
+
+** (venom-panel:5624): WARNING **: 23:30:59.790: Miasma Plugin: Failed to set effect pixelation: GDBus.Error:org.venomlinux.miasma.error.custom: Audio visualizer is not enabled
+[Panel] Plugin 'Workspace Switcher' loaded (expand=0 pad=2)
+[Panel] Plugin 'Window List' loaded (expand=0 pad=2)
+[Panel] Plugin 'Media Controls' loaded (expand=0 pad=2)
+
+** (venom-panel:8305): WARNING **: 23:33:16.270: SNI: GetItems failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.SNI was not provided by any .service files
+[Panel] Plugin 'Miasma Control' loaded (expand=0 pad=2)
+
+** (venom-panel:8305): WARNING **: 23:37:02.679: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8305): WARNING **: 23:37:02.726: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8305): WARNING **: 23:37:02.783: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8305): WARNING **: 23:37:02.894: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8305): WARNING **: 23:37:03.135: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8305): WARNING **: 23:37:03.199: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8305): WARNING **: 23:37:06.390: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8305): WARNING **: 23:37:06.422: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8305): WARNING **: 23:37:06.454: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8305): WARNING **: 23:37:06.480: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8305): WARNING **: 23:37:06.510: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8305): WARNING **: 23:37:06.534: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8305): WARNING **: 23:37:06.558: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8305): WARNING **: 23:37:06.598: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+[Panel] Plugin 'Workspace Switcher' loaded (expand=0 pad=2)
+[Panel] Plugin 'Window List' loaded (expand=0 pad=2)
+[Panel] Plugin 'Media Controls' loaded (expand=0 pad=2)
+
+** (venom-panel:8799): WARNING **: 23:37:11.266: SNI: GetItems failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.SNI was not provided by any .service files
+[Panel] Plugin 'Miasma Control' loaded (expand=0 pad=2)
+
+** (venom-panel:8799): WARNING **: 23:37:14.655: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:15.550: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.158: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.190: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.215: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.231: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.248: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.261: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.621: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.637: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.653: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.677: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.709: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.733: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.757: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.821: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.853: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.869: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.893: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.917: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.949: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.973: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:16.997: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:17.015: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:17.031: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:17.048: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:17.066: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:17.293: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:17.342: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:17.405: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:17.453: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+
+** (venom-panel:8799): WARNING **: 23:37:17.501: Miasma Plugin: Failed to set blur_strength: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venomlinux.miasma._0 was not provided by any .service files
+[Panel] Received reload signal! Reloading config...
+[Panel] Plugin 'Workspace Switcher' loaded (expand=0 pad=2)
+[Panel] Plugin 'Window List' loaded (expand=0 pad=2)
+[Panel] Plugin 'Miasma Control' loaded (expand=0 pad=2)
+[Panel] Plugin 'Media Controls' loaded (expand=0 pad=2)
+
+** (venom-panel:8799): WARNING **: 23:37:51.768: SNI: GetItems failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.SNI was not provided by any .service files
+
+(venom-panel:8799): Gtk-CRITICAL **: 23:37:51.770: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+
+(venom-panel:8799): Gtk-CRITICAL **: 23:37:52.761: gtk_label_set_text: assertion 'GTK_IS_LABEL (label)' failed
+venom-panel: no process found
+[Panel] Plugin 'Miasma Control' loaded (expand=0 pad=2)
+[Panel] Plugin 'Workspace Switcher' loaded (expand=0 pad=2)
+[Panel] Plugin 'Window List' loaded (expand=0 pad=2)
+[Panel] Plugin 'Media Controls' loaded (expand=0 pad=2)
+
+** (venom-panel:9391): WARNING **: 23:40:01.162: SNI: GetItems failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.SNI was not provided by any .service files
+[Brightness] Manager Init...
+[Brightness] Initializing D-Bus...
+[Brightness] D-Bus proxy created.
+[Brightness] Checking 'Brightness' property...
+[Brightness] 'Brightness' property not found or null.
+[Brightness] Checking brightnessctl...
+Can't modify brightness: Permission denied
+
+You should run this program with root privileges.
+Alternatively, get write permissions for device files.
+Brightness Manager: brightnessctl found but lacks permissions. Skipping.
+[Brightness] Checking sysfs...
+[Brightness] Checking xrandr...
+Brightness Manager: Using xrandr (output: HDMI-1)
+[NetworkClient] Connecting to org.venom.Network...
+[NetworkClient] ✅ WiFi proxy connected
+[NetworkClient] ✅ Bluetooth proxy connected
+[NetworkClient] ✅ Ethernet proxy connected
+[NetworkClient] Initialized
+[NotificationClient] Connecting to org.freedesktop.Notifications...
+[NotificationClient] ✅ Connected to venom_notify
+[Bluetooth] GetStatus failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+[Ethernet] Checking connection...
+[Ethernet] GetInterfaces failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.venom.Network was not provided by any .service files
+
+** (venom-panel:9391): WARNING **: 23:40:03.578: [NotificationClient] GetDoNotDisturb failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.Notifications was not provided by any .service files
+
+** (venom-panel:9391): WARNING **: 23:40:03.582: [NotificationClient] GetHistory failed: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.Notifications was not provided by any .service files

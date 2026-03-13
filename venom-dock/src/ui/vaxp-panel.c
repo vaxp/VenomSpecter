@@ -60,7 +60,7 @@ static void on_dock_realize(GtkWidget *widget, gpointer data) {
     
     /* Reserve 60px at bottom */
     gulong strut[12] = {0};
-    strut[3] = 60;  /* bottom */
+    strut[3] = 55;  /* bottom */
     strut[10] = 0;  /* bottom_start_x */
     strut[11] = geometry.width;  /* bottom_end_x */
     
@@ -71,7 +71,7 @@ static void on_dock_realize(GtkWidget *widget, gpointer data) {
                        (guchar *)strut, 12);
     
     /* Also set _NET_WM_STRUT for older window managers */
-    gulong simple_strut[4] = {0, 0, 0, 60};  /* left, right, top, bottom */
+    gulong simple_strut[4] = {0, 0, 0, 55};  /* left, right, top, bottom */
     gdk_property_change(gdk_window,
                        gdk_atom_intern("_NET_WM_STRUT", FALSE),
                        gdk_atom_intern("CARDINAL", FALSE),
@@ -178,7 +178,7 @@ static void on_window_size_allocate(GtkWidget *widget, GtkAllocation *allocation
         gdk_monitor_get_geometry(monitor, &geometry);
         
         int x = geometry.x + (geometry.width - allocation->width) / 2;
-        int y = geometry.y + geometry.height - allocation->height - 10;
+        int y = geometry.y + geometry.height - allocation->height - 2;
         
         gtk_window_move(GTK_WINDOW(widget), x, y);
     } else {
@@ -188,7 +188,7 @@ static void on_window_size_allocate(GtkWidget *widget, GtkAllocation *allocation
         gint screen_height = gdk_screen_get_height(screen);
         
         int x = (screen_width - allocation->width) / 2;
-        int y = screen_height - allocation->height - 10;
+        int y = screen_height - allocation->height - 2;
         
         gtk_window_move(GTK_WINDOW(widget), x, y);
     }

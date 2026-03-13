@@ -104,9 +104,87 @@ on_key_press (GtkWidget *widget, GdkEventKey *event, gpointer user_data)
         return TRUE;
     }
 
+    /* Page Navigation */
+    if (event->keyval == GDK_KEY_Page_Up) {
+        venom_app_grid_go_prev_page (VENOM_APP_GRID (self->app_grid));
+        return TRUE;
+    } else if (event->keyval == GDK_KEY_Page_Down) {
+        venom_app_grid_go_next_page (VENOM_APP_GRID (self->app_grid));
+        return TRUE;
+    }
+
+    /* Page Navigation via Arrow Keys when search is empty */
+    const char *search_text = venom_search_bar_get_text (VENOM_SEARCH_BAR (self->search_bar));
+    if (!search_text || search_text[0] == '\0') {
+        if (event->keyval == GDK_KEY_Left) {
+            venom_app_grid_go_prev_page (VENOM_APP_GRID (self->app_grid));
+            return TRUE;
+        } else if (event->keyval == GDK_KEY_Right) {
+            venom_app_grid_go_next_page (VENOM_APP_GRID (self->app_grid));
+            return TRUE;
+        }
+    }
+
     /* Forward typing to search bar */
     if (!gtk_widget_has_focus (self->search_bar)) {
         gtk_widget_grab_focus (self->search_bar);
+    }
+
+    return FALSE;
+}
+
+/* -------------------------------------------------------------------------
+ * Mouse scroll handling
+ * ------------------------------------------------------------------------- */
+
+static gboolean
+on_scroll (GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
+{
+    (void) user_data;
+    VenomLauncherWindow *self = VENOM_LAUNCHER_WINDOW (widget);
+    
+    /* Accumulate delta for smooth scrolling */
+    static double accum_y = 0.0;
+    static guint32 last_scroll_time = 0;
+    static guint32 last_page_time = 0;
+
+    /* Reset accumulator if a lot of time passed since last scroll */
+    if (event->time - last_scroll_time > 200) {
+        accum_y = 0.0;
+    }
+    last_scroll_time = event->time;
+
+    /* Debounce: Ignore events if we just changed a page within 300ms */
+    if (event->time - last_page_time < 300) {
+        return TRUE;
+    }
+
+    if (event->direction == GDK_SCROLL_UP) {
+        venom_app_grid_go_prev_page (VENOM_APP_GRID (self->app_grid));
+        last_page_time = event->time;
+        return TRUE;
+    } else if (event->direction == GDK_SCROLL_DOWN) {
+        venom_app_grid_go_next_page (VENOM_APP_GRID (self->app_grid));
+        last_page_time = event->time;
+        return TRUE;
+    } else if (event->direction == GDK_SCROLL_SMOOTH) {
+        accum_y += event->delta_y;
+        
+        if (event->delta_y == 0.0 && event->delta_x != 0.0) {
+            accum_y += event->delta_x;
+        }
+
+        if (accum_y <= -1.0) {
+            venom_app_grid_go_prev_page (VENOM_APP_GRID (self->app_grid));
+            accum_y = 0.0;
+            last_page_time = event->time;
+            return TRUE;
+        } else if (accum_y >= 1.0) {
+            venom_app_grid_go_next_page (VENOM_APP_GRID (self->app_grid));
+            accum_y = 0.0;
+            last_page_time = event->time;
+            return TRUE;
+        }
     }
 
     return FALSE;
@@ -164,6 +242,9 @@ venom_launcher_window_init (VenomLauncherWindow *self)
     /* Setup RGBA transparency */
     setup_transparency (GTK_WIDGET (self));
 
+    /* Add scroll events to the window */
+    gtk_widget_add_events (GTK_WIDGET (self), GDK_SCROLL_MASK | GDK_SMOOTH_SCROLL_MASK);
+
     /* Load CSS */
     load_css ();
 
@@ -173,10 +254,10 @@ venom_launcher_window_init (VenomLauncherWindow *self)
 
     /* ── Main content box ──────────────────────────────────────────── */
     GtkWidget *vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 24);
-    gtk_widget_set_margin_top    (vbox, 40);
+    gtk_widget_set_margin_top    (vbox, 70);
     gtk_widget_set_margin_bottom (vbox, 32);
-    gtk_widget_set_margin_start  (vbox, 48);
-    gtk_widget_set_margin_end    (vbox, 48);
+    gtk_widget_set_margin_start  (vbox, 150);
+    gtk_widget_set_margin_end    (vbox, 150);
     gtk_container_add (GTK_CONTAINER (self->root_overlay), vbox);
 
     /* ── Search Bar ────────────────────────────────────────────────── */
@@ -197,6 +278,9 @@ venom_launcher_window_init (VenomLauncherWindow *self)
 
     g_signal_connect (GTK_WIDGET (self), "key-press-event",
                       G_CALLBACK (on_key_press), NULL);
+
+    g_signal_connect (GTK_WIDGET (self), "scroll-event",
+                      G_CALLBACK (on_scroll), NULL);
 
     g_signal_connect (GTK_WIDGET (self), "draw",
                       G_CALLBACK (on_draw), NULL);

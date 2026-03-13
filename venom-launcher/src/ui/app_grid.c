@@ -34,8 +34,6 @@ struct _VenomAppGrid {
     int         active_box;     /* 1 or 2 */
 
     GtkWidget  *dots_box;
-    GtkWidget  *prev_btn;
-    GtkWidget  *next_btn;
 };
 
 G_DEFINE_TYPE (VenomAppGrid, venom_app_grid, GTK_TYPE_BOX)
@@ -56,8 +54,27 @@ update_dots (VenomAppGrid *self)
         GtkWidget *dot = gtk_label_new ("●");
         GtkStyleContext *ctx = gtk_widget_get_style_context (dot);
         gtk_style_context_add_class (ctx, "page-dot");
-        if (i == self->current_page)
+
+        if (i == self->current_page) {
             gtk_style_context_add_class (ctx, "active");
+            /* Force style with an inline provider to work around GTK3 refresh issues */
+            GtkCssProvider *prov = gtk_css_provider_new ();
+            gtk_css_provider_load_from_data (prov,
+                "label { color: rgba(255,255,255,0.90); font-size: 11px; }", -1, NULL);
+            gtk_style_context_add_provider (ctx,
+                GTK_STYLE_PROVIDER (prov),
+                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
+            g_object_unref (prov);
+        } else {
+            GtkCssProvider *prov = gtk_css_provider_new ();
+            gtk_css_provider_load_from_data (prov,
+                "label { color: rgba(255,255,255,0.30); font-size: 9px; }", -1, NULL);
+            gtk_style_context_add_provider (ctx,
+                GTK_STYLE_PROVIDER (prov),
+                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
+            g_object_unref (prov);
+        }
+
         gtk_box_pack_start (GTK_BOX (self->dots_box), dot, FALSE, FALSE, 0);
     }
 
@@ -92,11 +109,6 @@ populate_page (VenomAppGrid *self, GtkStackTransitionType transition)
         gtk_stack_set_transition_type (GTK_STACK (self->stack), transition);
     }
     gtk_stack_set_visible_child_name (GTK_STACK (self->stack), target_name);
-
-    /* Update nav buttons */
-    gtk_widget_set_sensitive (self->prev_btn, self->current_page > 0);
-    gtk_widget_set_sensitive (self->next_btn,
-                              self->current_page < self->total_pages - 1);
 
     update_dots (self);
 }
@@ -210,17 +222,6 @@ venom_app_grid_init (VenomAppGrid *self)
     GtkWidget *middle_hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 20);
     gtk_box_pack_start (GTK_BOX (self), middle_hbox, TRUE, TRUE, 0);
 
-    /* Prev Button */
-    self->prev_btn = gtk_button_new_from_icon_name ("go-previous-symbolic",
-                                                    GTK_ICON_SIZE_BUTTON);
-    gtk_style_context_add_class (
-        gtk_widget_get_style_context (self->prev_btn), "nav-button");
-    gtk_widget_set_sensitive (self->prev_btn, FALSE);
-    gtk_widget_set_valign (self->prev_btn, GTK_ALIGN_CENTER);
-    gtk_box_pack_start (GTK_BOX (middle_hbox), self->prev_btn, FALSE, FALSE, 0);
-    g_signal_connect (self->prev_btn, "clicked",
-                      G_CALLBACK (on_prev_clicked), self);
-
     /* ── Stack (replaces Single FlowBox) ────────────────────────────── */
     self->stack = gtk_stack_new ();
     gtk_stack_set_transition_duration (GTK_STACK (self->stack), 350);
@@ -236,20 +237,10 @@ venom_app_grid_init (VenomAppGrid *self)
 
     gtk_box_pack_start (GTK_BOX (middle_hbox), self->stack, TRUE, TRUE, 0);
 
-    /* Next Button */
-    self->next_btn = gtk_button_new_from_icon_name ("go-next-symbolic",
-                                                    GTK_ICON_SIZE_BUTTON);
-    gtk_style_context_add_class (
-        gtk_widget_get_style_context (self->next_btn), "nav-button");
-    gtk_widget_set_sensitive (self->next_btn, FALSE);
-    gtk_widget_set_valign (self->next_btn, GTK_ALIGN_CENTER);
-    gtk_box_pack_start (GTK_BOX (middle_hbox), self->next_btn, FALSE, FALSE, 0);
-    g_signal_connect (self->next_btn, "clicked",
-                      G_CALLBACK (on_next_clicked), self);
-
     /* ── Bottom Pagination Dots ──────────────────────────────────────── */
     GtkWidget *dots_container = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_halign (dots_container, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_bottom (dots_container, 40);
     gtk_box_pack_end (GTK_BOX (self), dots_container, FALSE, FALSE, 0);
 
     self->dots_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
