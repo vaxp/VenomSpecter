@@ -224,6 +224,72 @@ static gboolean get_item_position(const char *filename, int *x, int *y) {
 /* --- Dynamic Widget Handling --- */
 
 #define WIDGETS_DIR "/home/x/.config/venom/widgets"
+#define WIDGETS_ENABLED_CONFIG "/home/x/.config/venom/widgets-enabled"
+
+/* --- Widget Enable/Disable Config --- */
+
+static gboolean is_widget_enabled(const char *fname) {
+    char *contents = NULL;
+    gsize len = 0;
+    if (!g_file_get_contents(WIDGETS_ENABLED_CONFIG, &contents, &len, NULL))
+        return TRUE; /* default: enabled */
+    
+    gchar **lines = g_strsplit(contents, "\n", -1);
+    g_free(contents);
+    
+    for (int i = 0; lines[i] != NULL; i++) {
+        g_strstrip(lines[i]);
+        if (g_str_has_prefix(lines[i], "disabled:")) {
+            const char *disabled_name = lines[i] + 9;
+            if (g_strcmp0(disabled_name, fname) == 0) {
+                g_strfreev(lines);
+                return FALSE;
+            }
+        }
+    }
+    g_strfreev(lines);
+    return TRUE;
+}
+
+static void set_widget_enabled(const char *fname, gboolean enabled) {
+    ensure_config_dir();
+    
+    char *contents = NULL;
+    gsize len = 0;
+    g_file_get_contents(WIDGETS_ENABLED_CONFIG, &contents, &len, NULL);
+    
+    GString *new_contents = g_string_new("");
+    gboolean found = FALSE;
+    
+    if (contents) {
+        gchar **lines = g_strsplit(contents, "\n", -1);
+        g_free(contents);
+        for (int i = 0; lines[i] != NULL; i++) {
+            g_strstrip(lines[i]);
+            if (strlen(lines[i]) == 0) continue;
+            if (g_str_has_prefix(lines[i], "disabled:")) {
+                const char *disabled_name = lines[i] + 9;
+                if (g_strcmp0(disabled_name, fname) == 0) {
+                    found = TRUE;
+                    if (!enabled) {
+                        g_string_append_printf(new_contents, "disabled:%s\n", fname);
+                    }
+                    /* If enabling, skip this line (remove it) */
+                    continue;
+                }
+            }
+            g_string_append_printf(new_contents, "%s\n", lines[i]);
+        }
+        g_strfreev(lines);
+    }
+    
+    if (!found && !enabled) {
+        g_string_append_printf(new_contents, "disabled:%s\n", fname);
+    }
+    
+    g_file_set_contents(WIDGETS_ENABLED_CONFIG, new_contents->str, -1, NULL);
+    g_string_free(new_contents, TRUE);
+}
 
 static void load_all_widgets(GtkWidget *layout) {
     g_mkdir_with_parents(WIDGETS_DIR, 0755);
@@ -238,6 +304,12 @@ static void load_all_widgets(GtkWidget *layout) {
     const char *fname;
     while ((fname = g_dir_read_name(dir))) {
         if (!g_str_has_suffix(fname, ".so")) continue;
+
+        /* Skip disabled widgets */
+        if (!is_widget_enabled(fname)) {
+            g_print("[Widgets] Skipping disabled widget '%s'\n", fname);
+            continue;
+        }
 
         char *full_path = g_strdup_printf("%s/%s", WIDGETS_DIR, fname);
         void *handle = dlopen(full_path, RTLD_NOW | RTLD_LOCAL);
@@ -1391,6 +1463,195 @@ static void on_mode_widgets(GtkWidget *item, gpointer data) {
     refresh_icons();
 }
 
+/* --- Edit Widgets Dialog --- */
+
+static void reload_widgets(void) {
+    /* Destroy all existing widget children */
+    GList *children = gtk_container_get_children(GTK_CONTAINER(icon_layout));
+    for (GList *l = children; l != NULL; l = l->next) {
+        GtkWidget *child = GTK_WIDGET(l->data);
+        if (g_strcmp0(gtk_widget_get_name(child), "venom-widget") == 0) {
+            gtk_widget_destroy(child);
+        }
+    }
+    g_list_free(children);
+    /* Reload enabled widgets */
+    load_all_widgets(icon_layout);
+    /* Refresh to apply current mode visibility */
+    refresh_icons();
+}
+
+typedef struct {
+    char *fname;
+    GtkWidget *toggle;
+} WidgetRow;
+
+static void on_widget_toggle_changed(GtkSwitch *sw, gboolean state, gpointer user_data) {
+    const char *fname = (const char *)user_data;
+    set_widget_enabled(fname, state);
+}
+
+static void show_edit_widgets_dialog(GtkWidget *parent_widget) {
+    (void)parent_widget;
+
+    /* Styled dialog */
+    GtkWidget *dialog = gtk_dialog_new_with_buttons(
+        "Edit Widgets",
+        GTK_WINDOW(main_window),
+        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+        "_Cancel", GTK_RESPONSE_CANCEL,
+        "_Apply",  GTK_RESPONSE_ACCEPT,
+        NULL);
+    gtk_window_set_default_size(GTK_WINDOW(dialog), 480, 380);
+
+    /* Enable RGBA transparency on the dialog window */
+    GdkScreen *dlg_screen = gtk_widget_get_screen(dialog);
+    GdkVisual *dlg_visual = gdk_screen_get_rgba_visual(dlg_screen);
+    if (dlg_visual && gdk_screen_is_composited(dlg_screen)) {
+        gtk_widget_set_visual(dialog, dlg_visual);
+        gtk_widget_set_app_paintable(dialog, TRUE);
+    }
+
+    /* Apply transparent styling */
+    GtkCssProvider *dlg_css = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(dlg_css,
+        "window, dialog { background-color: transparent; }"
+        ".edit-widgets-dialog { background-color: rgba(0, 0, 0, 0.0); }"
+        ".widget-row { background-color: rgba(255,255,255,0.05);"
+        "  border: 1px solid rgba(0,252,210,0.15); border-radius: 8px;"
+        "  padding: 10px 14px; margin: 4px 0px; }"
+        ".widget-row:hover { background-color: rgba(0,252,210,0.10);"
+        "  border-color: rgba(0,252,210,0.5); }"
+        ".widget-name { color: white; font-size: 13px; font-weight: bold; }"
+        ".widget-file { color: rgba(255,255,255,0.45); font-size: 11px; }"
+        ".header-label { color: rgb(0,252,210); font-size: 12px; font-weight: bold;"
+        "  padding: 4px 0px 8px 0px; }"
+        "switch:checked { background-color: rgb(0,252,210); }",
+        -1, NULL);
+    gtk_style_context_add_provider_for_screen(
+        dlg_screen,
+        GTK_STYLE_PROVIDER(dlg_css),
+        GTK_STYLE_PROVIDER_PRIORITY_USER);
+
+    GtkWidget *content = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    gtk_container_set_border_width(GTK_CONTAINER(content), 12);
+    gtk_style_context_add_class(gtk_widget_get_style_context(content), "edit-widgets-dialog");
+
+    /* Header */
+    GtkWidget *header_lbl = gtk_label_new("Installed Widgets — toggle to show/hide on desktop");
+    gtk_widget_set_halign(header_lbl, GTK_ALIGN_START);
+    gtk_style_context_add_class(gtk_widget_get_style_context(header_lbl), "header-label");
+    gtk_box_pack_start(GTK_BOX(content), header_lbl, FALSE, FALSE, 0);
+
+    /* Scrolled area */
+    GtkWidget *scroll = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
+                                   GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_widget_set_vexpand(scroll, TRUE);
+    gtk_box_pack_start(GTK_BOX(content), scroll, TRUE, TRUE, 0);
+
+    GtkWidget *list_box = gtk_list_box_new();
+    gtk_list_box_set_selection_mode(GTK_LIST_BOX(list_box), GTK_SELECTION_NONE);
+    gtk_container_add(GTK_CONTAINER(scroll), list_box);
+
+    /* Collect widget rows */
+    GList *rows = NULL;
+    g_mkdir_with_parents(WIDGETS_DIR, 0755);
+    GDir *dir = g_dir_open(WIDGETS_DIR, 0, NULL);
+
+    int widget_count = 0;
+    if (dir) {
+        const char *fname;
+        while ((fname = g_dir_read_name(dir))) {
+            if (!g_str_has_suffix(fname, ".so")) continue;
+            widget_count++;
+
+            /* Try to get widget name from the .so */
+            char *full_path = g_strdup_printf("%s/%s", WIDGETS_DIR, fname);
+            const char *display_name = fname; /* fallback to filename */
+            const char *author_str = NULL;
+            void *handle = dlopen(full_path, RTLD_NOW | RTLD_LOCAL | RTLD_NOLOAD);
+            if (!handle) handle = dlopen(full_path, RTLD_NOW | RTLD_LOCAL);
+            if (handle) {
+                VenomWidgetAPI* (*init_func)(void) = dlsym(handle, "venom_widget_init");
+                if (init_func) {
+                    VenomWidgetAPI *api = init_func();
+                    if (api && api->name) display_name = api->name;
+                    if (api) author_str = api->author;
+                }
+            }
+
+            /* Row container */
+            GtkWidget *row_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+            gtk_style_context_add_class(gtk_widget_get_style_context(row_box), "widget-row");
+            gtk_widget_set_margin_start(row_box, 4);
+            gtk_widget_set_margin_end(row_box, 4);
+
+            /* Icon */
+            GtkWidget *icon = gtk_image_new_from_icon_name("preferences-desktop-default-applications",
+                                                            GTK_ICON_SIZE_DND);
+            gtk_box_pack_start(GTK_BOX(row_box), icon, FALSE, FALSE, 0);
+
+            /* Labels */
+            GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+            gtk_widget_set_hexpand(vbox, TRUE);
+
+            GtkWidget *name_lbl = gtk_label_new(display_name);
+            gtk_widget_set_halign(name_lbl, GTK_ALIGN_START);
+            gtk_style_context_add_class(gtk_widget_get_style_context(name_lbl), "widget-name");
+            gtk_box_pack_start(GTK_BOX(vbox), name_lbl, FALSE, FALSE, 0);
+
+            char *file_info = author_str
+                ? g_strdup_printf("%s  ·  by %s", fname, author_str)
+                : g_strdup(fname);
+            GtkWidget *file_lbl = gtk_label_new(file_info);
+            g_free(file_info);
+            gtk_widget_set_halign(file_lbl, GTK_ALIGN_START);
+            gtk_style_context_add_class(gtk_widget_get_style_context(file_lbl), "widget-file");
+            gtk_box_pack_start(GTK_BOX(vbox), file_lbl, FALSE, FALSE, 0);
+
+            gtk_box_pack_start(GTK_BOX(row_box), vbox, TRUE, TRUE, 0);
+
+            /* Toggle switch */
+            GtkWidget *toggle = gtk_switch_new();
+            gtk_switch_set_active(GTK_SWITCH(toggle), is_widget_enabled(fname));
+            gtk_widget_set_valign(toggle, GTK_ALIGN_CENTER);
+            char *fname_copy = g_strdup(fname);
+            g_signal_connect_data(toggle, "state-set",
+                                  G_CALLBACK(on_widget_toggle_changed),
+                                  fname_copy, (GClosureNotify)g_free, 0);
+            gtk_box_pack_end(GTK_BOX(row_box), toggle, FALSE, FALSE, 0);
+
+            gtk_list_box_insert(GTK_LIST_BOX(list_box), row_box, -1);
+            rows = g_list_append(rows, row_box);
+            g_free(full_path);
+        }
+        g_dir_close(dir);
+    }
+
+    /* Empty state */
+    if (widget_count == 0) {
+        GtkWidget *empty = gtk_label_new("No widgets found in ~/.config/venom/widgets/");
+        gtk_widget_set_sensitive(empty, FALSE);
+        gtk_box_pack_start(GTK_BOX(content), empty, TRUE, TRUE, 20);
+    }
+
+    gtk_widget_show_all(dialog);
+    gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+    g_object_unref(dlg_css);
+    g_list_free(rows);
+
+    if (response == GTK_RESPONSE_ACCEPT) {
+        /* Reload widgets to apply changes */
+        reload_widgets();
+    }
+}
+
+static void on_edit_widgets(GtkWidget *item, gpointer data) {
+    show_edit_widgets_dialog(GTK_WIDGET(data));
+}
+
 static gboolean on_bg_button_press(GtkWidget *widget, GdkEventButton *event, gpointer data) {
     if (event->button == 1) {
         deselect_all();
@@ -1450,12 +1711,19 @@ static gboolean on_bg_button_press(GtkWidget *widget, GdkEventButton *event, gpo
         gtk_menu_shell_append(GTK_MENU_SHELL(mode_menu), m_work);
         gtk_menu_shell_append(GTK_MENU_SHELL(mode_menu), m_widgets);
 
+        /* Edit Widgets item */
+        GtkWidget *sep_widgets  = gtk_separator_menu_item_new();
+        GtkWidget *edit_widgets = gtk_menu_item_new_with_label("🧩 Edit Widgets");
+        g_signal_connect(edit_widgets, "activate", G_CALLBACK(on_edit_widgets), widget);
+
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), new_folder);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), create_doc);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), term);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), paste);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), sep1);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), mode_item);
+        gtk_menu_shell_append(GTK_MENU_SHELL(menu), sep_widgets);
+        gtk_menu_shell_append(GTK_MENU_SHELL(menu), edit_widgets);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), refresh);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), sep2);
         gtk_menu_shell_append(GTK_MENU_SHELL(menu), sep_wp);
