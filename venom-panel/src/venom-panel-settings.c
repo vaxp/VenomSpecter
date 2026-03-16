@@ -4,10 +4,28 @@
 #include <string.h>
 #include <dlfcn.h>
 #include <dirent.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include "venom-panel-plugin-api.h"
 
-#define PANEL_CONFIG_FILE "/home/x/.config/venom/panel.conf"
-#define PANEL_PLUGINS_DIR "/home/x/.config/venom/panel-plugins"
+static char* panel_config_dir(void) {
+    return g_build_filename(g_get_user_config_dir(), "venom", NULL);
+}
+
+static char* panel_config_file(void) {
+    return g_build_filename(g_get_user_config_dir(), "venom", "panel.conf", NULL);
+}
+
+static char* panel_plugins_dir(void) {
+    return g_build_filename(g_get_user_config_dir(), "venom", "panel-plugins", NULL);
+}
+
+static gboolean path_is_regular_nosymlink(const char *path) {
+    struct stat st;
+    if (lstat(path, &st) != 0) return FALSE;
+    if (S_ISLNK(st.st_mode)) return FALSE;
+    return S_ISREG(st.st_mode) ? TRUE : FALSE;
+}
 
 typedef struct {
     char type[32];
@@ -25,7 +43,12 @@ static void load_config(void) {
     config_items = NULL;
 
     char *contents = NULL;
-    if (!g_file_get_contents(PANEL_CONFIG_FILE, &contents, NULL, NULL)) return;
+    char *cfg_file = panel_config_file();
+    if (!g_file_get_contents(cfg_file, &contents, NULL, NULL)) {
+        g_free(cfg_file);
+        return;
+    }
+    g_free(cfg_file);
 
     ConfigItem *cur = NULL;
     char **lines = g_strsplit(contents, "\n", -1);
@@ -73,7 +96,12 @@ static void save_config(void) {
         }
         g_string_append(out, "\n");
     }
-    g_file_set_contents(PANEL_CONFIG_FILE, out->str, -1, NULL);
+    char *cfg_dir = panel_config_dir();
+    char *cfg_file = panel_config_file();
+    g_mkdir_with_parents(cfg_dir, 0755);
+    g_file_set_contents(cfg_file, out->str, -1, NULL);
+    g_free(cfg_dir);
+    g_free(cfg_file);
     g_string_free(out, TRUE);
     
     /* Reload panel */
@@ -172,21 +200,22 @@ static GtkWidget* create_row(ConfigItem *item) {
     g_signal_connect(drag_handle, "drag-data-get", G_CALLBACK(on_drag_data_get), row);
     g_signal_connect(row, "drag-data-received", G_CALLBACK(on_drag_data_received), row);
 
-    char label_text[256];
+    gchar *label_text = NULL;
     const char *icon_name = "application-x-addon";
     if (!g_strcmp0(item->type, "separator")) {
-        snprintf(label_text, sizeof(label_text), "<b>Separator</b>");
+        label_text = g_strdup("<b>Separator</b>");
         icon_name = "list-remove-symbolic";
     } else if (!g_strcmp0(item->type, "spacer")) {
-        snprintf(label_text, sizeof(label_text), "<b>Spacer</b> (expands: %s)", item->expand ? "yes" : "no");
+        label_text = g_markup_printf_escaped("<b>Spacer</b> (expands: %s)", item->expand ? "yes" : "no");
         icon_name = "go-next-symbolic"; 
     } else {
-        snprintf(label_text, sizeof(label_text), "<b>%s</b> <small>(%s)</small>", item->name_or_file, item->type);
+        label_text = g_markup_printf_escaped("<b>%s</b> <small>(%s)</small>", item->name_or_file, item->type);
     }
 
     GtkWidget *icon = gtk_image_new_from_icon_name(icon_name, GTK_ICON_SIZE_BUTTON);
     GtkWidget *lbl = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(lbl), label_text);
+    g_free(label_text);
     gtk_widget_set_halign(lbl, GTK_ALIGN_START);
     
     gtk_box_pack_start(GTK_BOX(box), drag_handle, FALSE, FALSE, 0);
@@ -232,21 +261,41 @@ static void on_add_item(GtkButton *btn, gpointer data) {
     GtkWidget *combo = gtk_combo_box_text_new();
     
     /* Dynamically load plugins from directory */
-    DIR *dir = opendir(PANEL_PLUGINS_DIR);
+    char *plugins_dir = panel_plugins_dir();
+    g_mkdir_with_parents(plugins_dir, 0755);
+    DIR *dir = opendir(plugins_dir);
     if (dir) {
         struct dirent *ent;
         while ((ent = readdir(dir)) != NULL) {
             if (g_str_has_suffix(ent->d_name, ".so")) {
-                char *full_path = g_build_filename(PANEL_PLUGINS_DIR, ent->d_name, NULL);
-                void *handle = dlopen(full_path, RTLD_LAZY | RTLD_LOCAL);
+                char *full_path = g_build_filename(plugins_dir, ent->d_name, NULL);
+                if (!path_is_regular_nosymlink(full_path)) {
+                    g_free(full_path);
+                    continue;
+                }
+
+                void *handle = dlopen(full_path, RTLD_NOW | RTLD_LOCAL);
                 if (handle) {
-                    VenomPanelPluginInitFn init_func = (VenomPanelPluginInitFn)dlsym(handle, "venom_panel_plugin_init");
-                    if (init_func) {
-                        VenomPanelPluginAPI *api = init_func();
+                    VenomPanelPluginInitFnV2 init_func_v2 = (VenomPanelPluginInitFnV2)dlsym(handle, "venom_panel_plugin_init_v2");
+                    VenomPanelPluginInitFn init_func_v1 = (VenomPanelPluginInitFn)dlsym(handle, "venom_panel_plugin_init");
+
+                    const char *plugin_name = ent->d_name;
+                    if (init_func_v2) {
+                        VenomPanelPluginAPIv2 *api2 = init_func_v2();
+                        const size_t min_sz = offsetof(VenomPanelPluginAPIv2, create_widget) + sizeof(((VenomPanelPluginAPIv2 *)0)->create_widget);
+                        if (api2 && api2->api_version == VENOM_PANEL_PLUGIN_API_VERSION && api2->struct_size >= min_sz && api2->name && g_utf8_validate(api2->name, -1, NULL)) {
+                            plugin_name = api2->name;
+                        }
+                    } else if (init_func_v1) {
+                        VenomPanelPluginAPI *api1 = init_func_v1();
+                        if (api1 && api1->name && g_utf8_validate(api1->name, -1, NULL)) plugin_name = api1->name;
+                    }
+
+                    if (init_func_v2 || init_func_v1) {
                         char id_str[256];
                         char label_str[256];
                         snprintf(id_str, sizeof(id_str), "plugin:%s", ent->d_name);
-                        snprintf(label_str, sizeof(label_str), "Plugin: %s", api->name ? api->name : ent->d_name);
+                        snprintf(label_str, sizeof(label_str), "Plugin: %s", plugin_name);
                         gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(combo), id_str, label_str);
                     }
                     dlclose(handle);
@@ -256,6 +305,7 @@ static void on_add_item(GtkButton *btn, gpointer data) {
         }
         closedir(dir);
     }
+    g_free(plugins_dir);
     
     /* Append static builtin items */
     gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(combo), "builtin:tray", "Builtin: System Tray");
@@ -280,8 +330,10 @@ static void on_add_item(GtkButton *btn, gpointer data) {
             else if (!g_strcmp0(id, "separator")) { strcpy(it->type, "separator"); }
             else {
                 char **parts = g_strsplit(id, ":", 2);
-                strcpy(it->type, parts[0]);
-                strcpy(it->name_or_file, parts[1]);
+                if (parts && parts[0] && parts[1]) {
+                    g_strlcpy(it->type, parts[0], sizeof(it->type));
+                    g_strlcpy(it->name_or_file, parts[1], sizeof(it->name_or_file));
+                }
                 g_strfreev(parts);
             }
             config_items = g_list_append(config_items, it);

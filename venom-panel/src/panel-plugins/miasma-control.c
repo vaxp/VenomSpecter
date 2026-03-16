@@ -232,15 +232,25 @@ static GtkWidget* create_miasma_widget(void) {
     
     GtkWidget *icon = NULL;
     GError *err = NULL;
-    GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file_at_scale("/home/x/Desktop/VenomSpecter/venom-panel/logo.png", 22, 22, TRUE, &err);
+    /* Try to load logo.png next to the running panel binary (dev-friendly),
+     * otherwise fallback to an icon-theme symbol. */
+    char *exe = g_file_read_link("/proc/self/exe", NULL);
+    char *exe_dir = exe ? g_path_get_dirname(exe) : NULL;
+    char *logo_path = exe_dir ? g_build_filename(exe_dir, "logo.png", NULL) : NULL;
+    GdkPixbuf *pixbuf = logo_path ? gdk_pixbuf_new_from_file_at_scale(logo_path, 22, 22, TRUE, &err) : NULL;
     if (pixbuf) {
         icon = gtk_image_new_from_pixbuf(pixbuf);
         g_object_unref(pixbuf);
     } else {
-        g_warning("Miasma Plugin: Failed to load logo: %s", err->message);
-        g_error_free(err);
+        if (err) {
+            g_warning("Miasma Plugin: Failed to load logo: %s", err->message);
+            g_error_free(err);
+        }
         icon = gtk_image_new_from_icon_name("preferences-desktop-display", GTK_ICON_SIZE_LARGE_TOOLBAR);
     }
+    g_free(logo_path);
+    g_free(exe_dir);
+    g_free(exe);
     gtk_container_add(GTK_CONTAINER(button), icon);
     
     GtkStyleContext *ctx = gtk_widget_get_style_context(button);
@@ -262,5 +272,22 @@ VenomPanelPluginAPI* venom_panel_plugin_init(void) {
     api.expand      = FALSE;
     api.padding     = 0;
     api.create_widget = create_miasma_widget;
+    return &api;
+}
+
+VenomPanelPluginAPIv2* venom_panel_plugin_init_v2(void) {
+    static VenomPanelPluginAPIv2 api = {
+        .api_version = VENOM_PANEL_PLUGIN_API_VERSION,
+        .struct_size = sizeof(VenomPanelPluginAPIv2),
+        .name = "Miasma Control",
+        .description = "Control center for Venom Miasma compositor",
+        .author = "Venom Core",
+        .zone = VENOM_PLUGIN_ZONE_RIGHT,
+        .priority = 10,
+        .expand = FALSE,
+        .padding = 0,
+        .create_widget = create_miasma_widget,
+        .destroy_widget = NULL,
+    };
     return &api;
 }

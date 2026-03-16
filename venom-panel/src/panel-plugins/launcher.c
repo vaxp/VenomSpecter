@@ -67,3 +67,20 @@ VenomPanelPluginAPI* venom_panel_plugin_init(void) {
     api.create_widget = create_launcher_widget;
     return &api;
 }
+
+VenomPanelPluginAPIv2* venom_panel_plugin_init_v2(void) {
+    static VenomPanelPluginAPIv2 api = {
+        .api_version = VENOM_PANEL_PLUGIN_API_VERSION,
+        .struct_size = sizeof(VenomPanelPluginAPIv2),
+        .name = "App Launcher",
+        .description = "Quick-launch buttons on the left of the panel.",
+        .author = "Venom Core",
+        .zone = VENOM_PLUGIN_ZONE_LEFT,
+        .priority = 0,
+        .expand = FALSE,
+        .padding = 0,
+        .create_widget = create_launcher_widget,
+        .destroy_widget = NULL,
+    };
+    return &api;
+}

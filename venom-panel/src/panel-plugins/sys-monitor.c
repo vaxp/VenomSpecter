@@ -239,3 +239,20 @@ VenomPanelPluginAPI* venom_panel_plugin_init(void) {
     api.create_widget = create_sys_monitor_widget;
     return &api;
 }
+
+VenomPanelPluginAPIv2* venom_panel_plugin_init_v2(void) {
+    static VenomPanelPluginAPIv2 api = {
+        .api_version = VENOM_PANEL_PLUGIN_API_VERSION,
+        .struct_size = sizeof(VenomPanelPluginAPIv2),
+        .name = "System Monitor",
+        .description = "Displays minimal CPU & RAM usage and Distro name.",
+        .author = "Venom",
+        .zone = VENOM_PLUGIN_ZONE_LEFT,
+        .priority = 0,
+        .expand = FALSE,
+        .padding = 6,
+        .create_widget = create_sys_monitor_widget,
+        .destroy_widget = NULL,
+    };
+    return &api;
+}

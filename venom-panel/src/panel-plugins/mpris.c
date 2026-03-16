@@ -478,3 +478,20 @@ VenomPanelPluginAPI* venom_panel_plugin_init(void) {
     api.create_widget = create_mpris_widget;
     return &api;
 }
+
+VenomPanelPluginAPIv2* venom_panel_plugin_init_v2(void) {
+    static VenomPanelPluginAPIv2 api = {
+        .api_version = VENOM_PANEL_PLUGIN_API_VERSION,
+        .struct_size = sizeof(VenomPanelPluginAPIv2),
+        .name = "Media Controls",
+        .description = "Displays MPRIS media controls (Play/Pause/Skip) bulletproof for Chrome.",
+        .author = "Venom",
+        .zone = VENOM_PLUGIN_ZONE_RIGHT,
+        .priority = 0,
+        .expand = FALSE,
+        .padding = 4,
+        .create_widget = create_mpris_widget,
+        .destroy_widget = NULL,
+    };
+    return &api;
+}

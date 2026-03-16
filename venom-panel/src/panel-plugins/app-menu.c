@@ -211,3 +211,20 @@ VenomPanelPluginAPI* venom_panel_plugin_init(void) {
     api.create_widget = create_app_menu_widget;
     return &api;
 }
+
+VenomPanelPluginAPIv2* venom_panel_plugin_init_v2(void) {
+    static VenomPanelPluginAPIv2 api = {
+        .api_version = VENOM_PANEL_PLUGIN_API_VERSION,
+        .struct_size = sizeof(VenomPanelPluginAPIv2),
+        .name = "App Menu",
+        .description = "Traditional hierarchical application launcher.",
+        .author = "Venom",
+        .zone = VENOM_PLUGIN_ZONE_LEFT,
+        .priority = 0,
+        .expand = FALSE,
+        .padding = 2,
+        .create_widget = create_app_menu_widget,
+        .destroy_widget = NULL,
+    };
+    return &api;
+}

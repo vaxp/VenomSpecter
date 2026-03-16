@@ -497,7 +497,7 @@ GtkWidget *create_control_center(void)
     gtk_window_set_title(GTK_WINDOW(window), "Control Center");
     gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
     gtk_window_set_default_size(GTK_WINDOW(window), 360, 560); /* Slightly larger for tabs */
-    gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_DIALOG);
+    gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_DROPDOWN_MENU);
     gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), TRUE);
 
     /* Positioning logic */

@@ -91,18 +91,34 @@ padding=2
 #include "venom-panel-plugin-api.h"
 ```
 
-### هيكل الإضافة (`VenomPanelPluginAPI`)
-لم تعد الإضافات تستخدم المناطق الثابتة (يسار، وسط، يمين). يتم تحديد الترتيب بالكامل عبر الإعدادات، لكن الإضافة تستطيع تمرير **تلميحات** (Hints) للبانل عن شكلها المفضل:
+### هيكل الإضافة (`VenomPanelPluginAPI` / `VenomPanelPluginAPIv2`)
+يتم تحديد الترتيب بالكامل عبر الإعدادات، لكن الإضافة تستطيع تمرير **تلميحات** (Hints) للبانل عن شكلها المفضل.
+
+> **مهم:** يُفضّل استخدام API v2 عبر تصدير الدالة `venom_panel_plugin_init_v2` لأنها تضيف **تحقق من نسخة الـ ABI** وخيار `destroy_widget` لتنظيف المؤقتات/الموارد عند إعادة تحميل البانل.
 
 ```c
 typedef struct {
     const char *name;          /* اسم الإضافة                             */
     const char *description;   /* وصف مختصر                              */
     const char *author;        /* اسم المطور                              */
+    VenomPluginZone zone;      /* تلميح: يسار/وسط/يمين                   */
+    int priority;              /* تلميح: أولوية الترتيب ضمن المنطقة      */
     gboolean    expand;        /* هل تتمدد الإضافة لملء الفراغ؟ (Hint)    */
     int         padding;       /* مسافة الحواف المفضلة بالبكسل (Hint)    */
     GtkWidget* (*create_widget)(void); /* دالة بناء الواجهة                  */
 } VenomPanelPluginAPI;
+```
+
+**API v2 (الموصى به):**
+
+```c
+typedef struct {
+    uint32_t api_version;      /* VENOM_PANEL_PLUGIN_API_VERSION */
+    size_t   struct_size;      /* sizeof(VenomPanelPluginAPIv2)  */
+    /* نفس الحقول أعلاه... */
+    GtkWidget* (*create_widget)(void);
+    void (*destroy_widget)(GtkWidget *widget); /* اختياري */
+} VenomPanelPluginAPIv2;
 ```
 
 ---
@@ -138,7 +154,7 @@ static GtkWidget* create_username_widget(void) {
     return label;
 }
 
-/* الدالة الأساسية التي يبحث عنها البانل — يجب أن تكون موجودة */
+/* الدالة الأساسية (v1) — مدعومة للتوافق */
 VenomPanelPluginAPI* venom_panel_plugin_init(void) {
     static VenomPanelPluginAPI api;
     api.name          = "Username Display";
@@ -147,6 +163,23 @@ VenomPanelPluginAPI* venom_panel_plugin_init(void) {
     api.expand        = FALSE;    /* لا تتمدد افتراضياً */
     api.padding       = 4;        /* 4 بكسل حواف */
     api.create_widget = create_username_widget;
+    return &api;
+}
+
+/* الدالة الموصى بها (v2) */
+VenomPanelPluginAPIv2* venom_panel_plugin_init_v2(void) {
+    static VenomPanelPluginAPIv2 api;
+    api.api_version   = VENOM_PANEL_PLUGIN_API_VERSION;
+    api.struct_size   = sizeof(VenomPanelPluginAPIv2);
+    api.name          = "Username Display";
+    api.description   = "Shows the current user name.";
+    api.author        = "You";
+    api.zone          = VENOM_PLUGIN_ZONE_LEFT;
+    api.priority      = 0;
+    api.expand        = FALSE;
+    api.padding       = 4;
+    api.create_widget = create_username_widget;
+    api.destroy_widget = NULL; /* ضعها إذا لديك مؤقتات/موارد للتنظيف */
     return &api;
 }
 ```
@@ -182,6 +215,8 @@ make panel-plugins
 أي: `/home/YOUR_USERNAME/.config/venom/panel-plugins/`
 
 سيقرأ `venom-panel` هذا المجلد **تلقائياً** عند كل عملية تشغيل.
+
+> **ملاحظة أمنية:** قيمة `file=` داخل `panel.conf` يجب أن تكون **اسم ملف فقط** (basename) وتنتهي بـ `.so` (مثل `launcher.so`). لن يتم قبول مسارات تحتوي `/` أو `..` أو روابط رمزية (symlinks).
 
 ---
 

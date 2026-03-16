@@ -8,6 +8,8 @@
 #include <math.h>
 #include <dlfcn.h>
 #include <glib-unix.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 /* Headers (Assumed present in your project) */
 #include "venom-panel.h"
@@ -29,15 +31,35 @@ static GtkWidget *power_profile_btn = NULL;
 static GtkWidget *power_profile_label = NULL;
 static GtkWidget *power_actions_box = NULL;
 
+typedef struct {
+    GtkWidget *tray_box;
+} TrayUI;
+
+static TrayUI g_tray_ui = {0};
+
+static void set_widget_weak(GtkWidget **slot, GtkWidget *widget) {
+    if (*slot) g_object_remove_weak_pointer(G_OBJECT(*slot), (gpointer *)slot);
+    *slot = widget;
+    if (widget) g_object_add_weak_pointer(G_OBJECT(widget), (gpointer *)slot);
+}
+
 
 
 /* =====================================================================
  * 0. CONFIG-DRIVEN LAYOUT ENGINE
  * ===================================================================== */
 
-#define PANEL_PLUGINS_DIR  "/home/x/.config/venom/panel-plugins"
-#define PANEL_CONFIG_FILE  "/home/x/.config/venom/panel.conf"
-#define PANEL_CONFIG_DIR   "/home/x/.config/venom"
+static char* panel_config_dir(void) {
+    return g_build_filename(g_get_user_config_dir(), "venom", NULL);
+}
+
+static char* panel_config_file(void) {
+    return g_build_filename(g_get_user_config_dir(), "venom", "panel.conf", NULL);
+}
+
+static char* panel_plugins_dir(void) {
+    return g_build_filename(g_get_user_config_dir(), "venom", "panel-plugins", NULL);
+}
 
 typedef enum {
     ITEM_TYPE_PLUGIN,
@@ -55,7 +77,9 @@ typedef struct {
 } PanelItem;
 
 static void write_default_config(void) {
-    g_mkdir_with_parents(PANEL_CONFIG_DIR, 0755);
+    char *cfg_dir = panel_config_dir();
+    char *cfg_file = panel_config_file();
+    g_mkdir_with_parents(cfg_dir, 0755);
     const char *cfg =
         "# venom-panel layout — edit and restart to apply changes\n"
         "# Types: plugin, builtin, spacer, separator\n"
@@ -80,21 +104,26 @@ static void write_default_config(void) {
         "[item]\ntype=separator\n"
         "\n"
         "[item]\ntype=builtin\nname=control-center\nexpand=false\npadding=2\n";
-    g_file_set_contents(PANEL_CONFIG_FILE, cfg, -1, NULL);
-    g_print("[Panel] Created default config at %s\n", PANEL_CONFIG_FILE);
+    g_file_set_contents(cfg_file, cfg, -1, NULL);
+    g_print("[Panel] Created default config at %s\n", cfg_file);
+    g_free(cfg_dir);
+    g_free(cfg_file);
 }
 
 static GArray* parse_panel_config(void) {
-    if (!g_file_test(PANEL_CONFIG_FILE, G_FILE_TEST_EXISTS))
+    char *cfg_file = panel_config_file();
+    if (!g_file_test(cfg_file, G_FILE_TEST_EXISTS))
         write_default_config();
 
     GArray *items = g_array_new(FALSE, TRUE, sizeof(PanelItem));
     char *contents = NULL;
     gsize length = 0;
-    if (!g_file_get_contents(PANEL_CONFIG_FILE, &contents, &length, NULL)) {
-        g_warning("[Panel] Could not read %s", PANEL_CONFIG_FILE);
+    if (!g_file_get_contents(cfg_file, &contents, &length, NULL)) {
+        g_warning("[Panel] Could not read %s", cfg_file);
+        g_free(cfg_file);
         return items;
     }
+    g_free(cfg_file);
 
     PanelItem cur;
     memset(&cur, 0, sizeof(cur));
@@ -124,7 +153,11 @@ static GArray* parse_panel_config(void) {
         else if (!g_strcmp0(k,"file"))    strncpy(cur.file, v, sizeof(cur.file)-1);
         else if (!g_strcmp0(k,"name"))    strncpy(cur.name, v, sizeof(cur.name)-1);
         else if (!g_strcmp0(k,"expand"))  cur.expand  = !g_strcmp0(v,"true");
-        else if (!g_strcmp0(k,"padding")) cur.padding = atoi(v);
+        else if (!g_strcmp0(k,"padding")) {
+            cur.padding = atoi(v);
+            if (cur.padding < 0) cur.padding = 0;
+            if (cur.padding > 128) cur.padding = 128;
+        }
         g_strfreev(kv);
     }
     if (in_item) g_array_append_val(items, cur);
@@ -140,9 +173,49 @@ static GtkWidget* build_builtin_system_icons(void);
 static GtkWidget* build_builtin_clock(void);
 static GtkWidget* build_builtin_control_center(void);
 
+typedef struct {
+    const VenomPanelPluginAPIv2 *api_v2;
+    gboolean destroyed;
+} PanelPluginInstance;
+
+static GHashTable *g_plugin_handles = NULL;
+
+static gboolean plugin_is_safe_basename(const char *name) {
+    if (!name || !name[0]) return FALSE;
+    if (g_path_is_absolute(name)) return FALSE;
+    if (strchr(name, G_DIR_SEPARATOR)) return FALSE;
+    if (g_strrstr(name, "..")) return FALSE;
+    if (!g_str_has_suffix(name, ".so")) return FALSE;
+    return TRUE;
+}
+
+static gboolean path_is_regular_nosymlink(const char *path) {
+    struct stat st;
+    if (lstat(path, &st) != 0) return FALSE;
+    if (S_ISLNK(st.st_mode)) return FALSE;
+    return S_ISREG(st.st_mode) ? TRUE : FALSE;
+}
+
+static void plugin_instance_destroy(PanelPluginInstance *inst, GtkWidget *widget) {
+    if (!inst || inst->destroyed) return;
+    inst->destroyed = TRUE;
+    if (inst->api_v2 && inst->api_v2->destroy_widget) inst->api_v2->destroy_widget(widget);
+}
+
+static void on_plugin_widget_destroy(GtkWidget *widget, gpointer user_data) {
+    plugin_instance_destroy((PanelPluginInstance *)user_data, widget);
+}
+
+static void plugin_instance_free(gpointer data) {
+    PanelPluginInstance *inst = (PanelPluginInstance *)data;
+    if (!inst) return;
+    g_free(inst);
+}
+
 static void load_items_from_config(GtkWidget *hbox) {
     GArray *items = parse_panel_config();
-    g_mkdir_with_parents(PANEL_PLUGINS_DIR, 0755);
+    char *plugins_dir = panel_plugins_dir();
+    g_mkdir_with_parents(plugins_dir, 0755);
 
     for (guint i = 0; i < items->len; i++) {
         PanelItem *item = &g_array_index(items, PanelItem, i);
@@ -170,33 +243,88 @@ static void load_items_from_config(GtkWidget *hbox) {
                 else g_warning("[Panel] Unknown builtin: '%s'", item->name);
                 break;
             case ITEM_TYPE_PLUGIN: {
-                char *fp = g_strdup_printf("%s/%s", PANEL_PLUGINS_DIR, item->file);
-                void *h = dlopen(fp, RTLD_NOW | RTLD_LOCAL);
+                if (!plugin_is_safe_basename(item->file)) {
+                    g_warning("[Panel] Refusing plugin path '%s' (must be a basename ending with .so)", item->file);
+                    GtkWidget *warn = gtk_image_new_from_icon_name("dialog-warning-symbolic", GTK_ICON_SIZE_MENU);
+                    gtk_widget_set_tooltip_text(warn, "Invalid plugin filename in config");
+                    widget = warn;
+                    break;
+                }
+
+                char *fp = g_build_filename(plugins_dir, item->file, NULL);
+                if (!path_is_regular_nosymlink(fp)) {
+                    g_warning("[Panel] Refusing plugin '%s' (not a regular file or is a symlink)", item->file);
+                    GtkWidget *warn = gtk_image_new_from_icon_name("dialog-warning-symbolic", GTK_ICON_SIZE_MENU);
+                    char *tip = g_strdup_printf("Plugin is not a regular file: %s", item->file);
+                    gtk_widget_set_tooltip_text(warn, tip);
+                    g_free(tip);
+                    widget = warn;
+                    g_free(fp);
+                    break;
+                }
+
+                gboolean opened_new = FALSE;
+                void *h = NULL;
+                if (!g_plugin_handles) g_plugin_handles = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+                h = g_hash_table_lookup(g_plugin_handles, fp);
+                if (!h) {
+                    opened_new = TRUE;
+                    h = dlopen(fp, RTLD_NOW | RTLD_LOCAL);
+                }
                 if (!h) { 
                     g_warning("[Panel] dlopen %s: %s", item->file, dlerror());
                     /* Graceful fallback: show a warning icon instead of crashing */
                     GtkWidget *warn = gtk_image_new_from_icon_name("dialog-warning-symbolic", GTK_ICON_SIZE_MENU);
-                    gtk_widget_set_tooltip_text(warn, g_strdup_printf("Plugin missing or crashed: %s", item->file));
+                    char *tip = g_strdup_printf("Plugin missing or crashed: %s", item->file);
+                    gtk_widget_set_tooltip_text(warn, tip);
+                    g_free(tip);
                     widget = warn;
                 } else {
-                    VenomPanelPluginInitFn fn = (VenomPanelPluginInitFn)dlsym(h, "venom_panel_plugin_init");
-                    if (!fn) { 
-                        g_warning("[Panel] No init in %s", item->file); 
-                        dlclose(h);
+                    VenomPanelPluginInitFnV2 fn2 = (VenomPanelPluginInitFnV2)dlsym(h, "venom_panel_plugin_init_v2");
+                    VenomPanelPluginInitFn fn1 = (VenomPanelPluginInitFn)dlsym(h, "venom_panel_plugin_init");
+
+                    const char *plugin_display_name = item->file;
+                    const VenomPanelPluginAPIv2 *api2 = NULL;
+                    const VenomPanelPluginAPI *api1 = NULL;
+
+                    if (fn2) {
+                        api2 = fn2();
+                        const size_t min_sz = offsetof(VenomPanelPluginAPIv2, create_widget) + sizeof(((VenomPanelPluginAPIv2 *)0)->create_widget);
+                        if (!api2 || api2->api_version != VENOM_PANEL_PLUGIN_API_VERSION || api2->struct_size < min_sz) {
+                            g_warning("[Panel] Invalid v2 API in %s", item->file);
+                            api2 = NULL;
+                        } else if (api2->name) {
+                            plugin_display_name = api2->name;
+                        }
+                    } else if (fn1) {
+                        api1 = fn1();
+                        if (api1 && api1->name) plugin_display_name = api1->name;
+                    }
+
+                    if ((!api2 || !api2->create_widget) && (!api1 || !api1->create_widget)) {
+                        g_warning("[Panel] No valid init symbol in %s", item->file);
+                        if (opened_new) dlclose(h);
                         GtkWidget *warn = gtk_image_new_from_icon_name("dialog-error-symbolic", GTK_ICON_SIZE_MENU);
-                        gtk_widget_set_tooltip_text(warn, g_strdup_printf("Invalid plugin: %s", item->file));
+                        char *tip = g_strdup_printf("Invalid plugin: %s", item->file);
+                        gtk_widget_set_tooltip_text(warn, tip);
+                        g_free(tip);
                         widget = warn;
                     } else {
-                        VenomPanelPluginAPI *api = fn();
-                        if (api && api->create_widget) {
-                            widget = api->create_widget();
-                            if (!widget) {
-                                GtkWidget *warn = gtk_image_new_from_icon_name("dialog-error-symbolic", GTK_ICON_SIZE_MENU);
-                                gtk_widget_set_tooltip_text(warn, g_strdup_printf("Plugin %s failed to create UI", api->name));
-                                widget = warn;
-                            } else {
-                                g_print("[Panel] Plugin '%s' loaded (expand=%d pad=%d)\n", api->name, expand, padding);
-                            }
+                        if (opened_new) g_hash_table_insert(g_plugin_handles, g_strdup(fp), h);
+                        widget = api2 && api2->create_widget ? api2->create_widget() : api1->create_widget();
+                        if (!widget) {
+                            GtkWidget *warn = gtk_image_new_from_icon_name("dialog-error-symbolic", GTK_ICON_SIZE_MENU);
+                            char *tip = g_strdup_printf("Plugin %s failed to create UI", plugin_display_name);
+                            gtk_widget_set_tooltip_text(warn, tip);
+                            g_free(tip);
+                            widget = warn;
+                        } else {
+                            PanelPluginInstance *inst = g_new0(PanelPluginInstance, 1);
+                            inst->api_v2 = api2;
+                            inst->destroyed = FALSE;
+                            g_signal_connect(widget, "destroy", G_CALLBACK(on_plugin_widget_destroy), inst);
+                            g_object_set_data_full(G_OBJECT(widget), "venom-panel-plugin-instance", inst, plugin_instance_free);
+                            g_print("[Panel] Plugin '%s' loaded (expand=%d pad=%d)\n", plugin_display_name, expand, padding);
                         }
                     }
                 }
@@ -211,6 +339,7 @@ static void load_items_from_config(GtkWidget *hbox) {
         }
     }
     g_array_free(items, TRUE);
+    g_free(plugins_dir);
 }
 
 /* =====================================================================
@@ -276,6 +405,13 @@ static gboolean on_panel_sigusr1(gpointer user_data) {
     (void)user_data;
     g_print("[Panel] Received reload signal! Reloading config...\n");
     if (g_panel_hbox) {
+        /* Prevent async callbacks/timers from touching freed widgets during reload */
+        rec_stop_button = NULL;
+        power_profile_btn = NULL;
+        power_profile_label = NULL;
+        power_actions_box = NULL;
+        set_widget_weak(&g_tray_ui.tray_box, NULL);
+
         /* Destroy all current children */
         GList *children = gtk_container_get_children(GTK_CONTAINER(g_panel_hbox));
         for (GList *iter = children; iter != NULL; iter = g_list_next(iter)) {
@@ -290,15 +426,24 @@ static gboolean on_panel_sigusr1(gpointer user_data) {
 
 static void on_menu_preferences(GtkMenuItem *item, gpointer data) {
     (void)item; (void)data;
-    /* Use the exact known path since this project is in development. 
-     * In production, this would be an installed binary path like /usr/bin/venom-panel-settings */
-    g_spawn_command_line_async("/home/x/Desktop/VenomSpecter/venom-panel/venom-panel-settings", NULL);
+    char *settings_bin = g_find_program_in_path("venom-panel-settings");
+    if (settings_bin) {
+        g_spawn_command_line_async(settings_bin, NULL);
+        g_free(settings_bin);
+        return;
+    }
+    /* Dev fallback: local binary next to cwd */
+    g_spawn_command_line_async("./venom-panel-settings", NULL);
 }
 
 static void on_menu_restart(GtkMenuItem *item, gpointer data) {
     (void)item; (void)data;
-    /* Clean restart using absolute path */
-    g_spawn_command_line_async("bash -c 'pidof venom-panel | xargs kill; nohup /home/x/Desktop/VenomSpecter/venom-panel/venom-panel &'", NULL);
+    char *panel_bin = g_find_program_in_path("venom-panel");
+    const char *panel_cmd = panel_bin ? panel_bin : "./venom-panel";
+    char *cmd = g_strdup_printf("bash -c 'pidof venom-panel | xargs -r kill; nohup %s >/dev/null 2>&1 &'", panel_cmd);
+    g_spawn_command_line_async(cmd, NULL);
+    g_free(cmd);
+    g_free(panel_bin);
 }
 
 static gboolean on_panel_button_press(GtkWidget *widget, GdkEventButton *event, gpointer data) {
@@ -503,7 +648,9 @@ static void on_tray_button_press(GtkButton *btn, GdkEventButton *event, gpointer
 
 
 static void on_tray_item_added(TrayItem *item, gpointer user_data) {
-    GtkWidget *box = GTK_WIDGET(user_data);
+    TrayUI *ui = (TrayUI *)user_data;
+    GtkWidget *box = ui ? ui->tray_box : NULL;
+    if (!box) return;
     
     /* Dedupe */
     GList *children = gtk_container_get_children(GTK_CONTAINER(box));
@@ -539,7 +686,9 @@ static void on_tray_item_added(TrayItem *item, gpointer user_data) {
 }
 
 static void on_tray_item_removed(const gchar *id, gpointer user_data) {
-    GtkWidget *box = GTK_WIDGET(user_data);
+    TrayUI *ui = (TrayUI *)user_data;
+    GtkWidget *box = ui ? ui->tray_box : NULL;
+    if (!box) return;
     GList *children = gtk_container_get_children(GTK_CONTAINER(box));
     for(GList *l=children; l; l=l->next) {
         const char *eid = g_object_get_data(G_OBJECT(l->data), "tray-id");
@@ -670,11 +819,12 @@ static GtkWidget* build_builtin_tray(GtkWidget *hbox) {
     gtk_box_pack_start(GTK_BOX(tray_container), tray_box, FALSE, FALSE, 0);
 
     sni_client_init();   /* initialise SNI D-Bus client before querying items */
-    sni_client_on_item_added(on_tray_item_added, tray_box);
-    sni_client_on_item_removed(on_tray_item_removed, tray_box);
+    set_widget_weak(&g_tray_ui.tray_box, tray_box);
+    sni_client_on_item_added(on_tray_item_added, &g_tray_ui);
+    sni_client_on_item_removed(on_tray_item_removed, &g_tray_ui);
     GList *items = sni_client_get_items();
     for (GList *l = items; l; l = l->next)
-        on_tray_item_added((TrayItem*)l->data, tray_box);
+        on_tray_item_added((TrayItem*)l->data, &g_tray_ui);
     tray_item_list_free(items);
 
     return tray_container;

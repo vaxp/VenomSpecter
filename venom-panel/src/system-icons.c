@@ -9,6 +9,12 @@ static GtkWidget *_bluetooth_icon = NULL;
 static GtkWidget *_batt_icon = NULL;
 static GtkWidget *_batt_label = NULL;
 
+static void set_widget_weak(GtkWidget **slot, GtkWidget *widget) {
+    if (*slot) g_object_remove_weak_pointer(G_OBJECT(*slot), (gpointer *)slot);
+    *slot = widget;
+    if (widget) g_object_add_weak_pointer(G_OBJECT(widget), (gpointer *)slot);
+}
+
 /* Update icon visibility based on network state */
 static gboolean update_system_icons(gpointer data) {
     (void)data;
@@ -34,6 +40,20 @@ static gboolean update_system_icons(gpointer data) {
     }
     
     return G_SOURCE_CONTINUE;  /* Keep the timer running */
+}
+
+static void on_system_icons_destroy(GtkWidget *widget, gpointer user_data) {
+    (void)user_data;
+    guint timer_id = GPOINTER_TO_UINT(g_object_get_data(G_OBJECT(widget), "venom-system-icons-timer-id"));
+    if (timer_id) {
+        g_source_remove(timer_id);
+        g_object_set_data(G_OBJECT(widget), "venom-system-icons-timer-id", NULL);
+    }
+
+    set_widget_weak(&_wifi_icon, NULL);
+    set_widget_weak(&_bluetooth_icon, NULL);
+    set_widget_weak(&_batt_icon, NULL);
+    set_widget_weak(&_batt_label, NULL);
 }
 
 /* Battery Callback */
@@ -67,6 +87,7 @@ static void on_battery_update(gdouble percentage, gboolean charging, gint64 time
 
 GtkWidget* create_system_icons(void) {
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    g_signal_connect(box, "destroy", G_CALLBACK(on_system_icons_destroy), NULL);
     
     /* Initialize clients */
     network_client_init();
@@ -76,24 +97,24 @@ GtkWidget* create_system_icons(void) {
     power_client_init(); 
     
     /* WiFi icon */
-    _wifi_icon = gtk_image_new_from_icon_name("network-wireless-signal-excellent-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR);
+    set_widget_weak(&_wifi_icon, gtk_image_new_from_icon_name("network-wireless-signal-excellent-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR));
     gtk_box_pack_start(GTK_BOX(box), _wifi_icon, FALSE, FALSE, 0);
     if (!wifi_client_is_enabled()) gtk_widget_set_no_show_all(_wifi_icon, TRUE);
     
     /* Bluetooth icon */
-    _bluetooth_icon = gtk_image_new_from_icon_name("bluetooth-active-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR);
+    set_widget_weak(&_bluetooth_icon, gtk_image_new_from_icon_name("bluetooth-active-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR));
     gtk_box_pack_start(GTK_BOX(box), _bluetooth_icon, FALSE, FALSE, 0);
     if (!bluetooth_client_is_powered()) gtk_widget_set_no_show_all(_bluetooth_icon, TRUE);
     
     /* Battery Section */
     GtkWidget *batt_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     
-    _batt_label = gtk_label_new("...");
+    set_widget_weak(&_batt_label, gtk_label_new("..."));
     GtkStyleContext *vc = gtk_widget_get_style_context(_batt_label);
     gtk_style_context_add_class(vc, "battery-label");
     gtk_box_pack_start(GTK_BOX(batt_box), _batt_label, FALSE, FALSE, 0);
     
-    _batt_icon = gtk_image_new_from_icon_name("battery-missing-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR);
+    set_widget_weak(&_batt_icon, gtk_image_new_from_icon_name("battery-missing-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR));
     gtk_box_pack_start(GTK_BOX(batt_box), _batt_icon, FALSE, FALSE, 0);
     
     gtk_box_pack_start(GTK_BOX(box), batt_box, FALSE, FALSE, 0);
@@ -108,7 +129,8 @@ GtkWidget* create_system_icons(void) {
     gtk_style_context_add_class(context, "system-icons");
     
     /* Setup periodic update for NETWORK icons (Battery is pushed via signal) */
-    g_timeout_add_seconds(2, update_system_icons, NULL);
+    guint timer_id = g_timeout_add_seconds(2, update_system_icons, NULL);
+    g_object_set_data(G_OBJECT(box), "venom-system-icons-timer-id", GUINT_TO_POINTER(timer_id));
     
     return box;
 }
